@@ -57,29 +57,29 @@ const Form = styled.div`
 `;
 
 
-const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+const RegisterPage: React.FC = () => {
+  const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     try {
-      await login(email, password);
+      await register(email, password);
       navigate("/");
     } catch {
-      alert("Login failed");
+      alert("Register failed");
     }
   };
 
   return (
     <Form>
-      <h2>🔐 Login</h2>
+      <h2>📝 Register</h2>
       <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
       <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button onClick={handleLogin}>Login</button>
+      <button onClick={handleRegister}>Create account</button>
     </Form>
   );
 };
 
-export default LoginPage;
+export default RegisterPage;

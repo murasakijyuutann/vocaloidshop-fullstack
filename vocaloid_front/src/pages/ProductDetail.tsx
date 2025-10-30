@@ -6,8 +6,45 @@ import { useCart } from "../hooks/useCart";
 import { useAuth } from "../hooks/useAuth";
 
 const Container = styled.div`
-  padding: 2rem;
+  padding: 3rem;
+  max-width: 700px;
+  margin: 2rem auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+  text-align: center;
+  animation: fadeInUp 0.5s ease;
+
+  h1 {
+    color: ${({ theme }) => theme.colors.primary};
+  }
+
+  p {
+    color: #555;
+    margin-bottom: 1rem;
+  }
+
+  button {
+    background: ${({ theme }) => theme.colors.primary};
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    transition: 0.3s;
+
+    &:hover {
+      background: ${({ theme }) => theme.colors.accent};
+      transform: scale(1.08);
+    }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(25px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 `;
+
 
 interface Product {
   id: number;
@@ -32,7 +69,8 @@ const ProductDetail: React.FC = () => {
     const handleAddToCart = () => {
       if (!product) return;
       if (!user) {
-        // Require login before adding to cart (Option C)
+          // Require login before adding to cart (Option C)
+        alert("Please log in to add items to your cart.");
         navigate("/login", { replace: false });
         return;
       }

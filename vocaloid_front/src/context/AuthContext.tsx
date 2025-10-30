@@ -10,17 +10,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.getItem("token")
   );
 
+  // Keep axios auth header in sync with token
   useEffect(() => {
     if (token) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       axios
-        .get("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+        .get("/auth/me")
         .then(res => setUser(res.data))
         .catch(() => logout());
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
     }
   }, [token]);
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post("/api/auth/login", { email, password });
+    const res = await axios.post("/auth/login", { email, password });
+    localStorage.setItem("token", res.data.token);
+    setToken(res.data.token);
+  };
+
+  const register = async (email: string, password: string) => {
+    const res = await axios.post("/auth/register", { email, password });
     localStorage.setItem("token", res.data.token);
     setToken(res.data.token);
   };
@@ -32,7 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
