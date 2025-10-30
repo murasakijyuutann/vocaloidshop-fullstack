@@ -42,6 +42,39 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
+// ✅ Add to cart
+app.post("/api/cart", async (req, res) => {
+  try {
+    const response = await axios.post(`${SPRING_API}/api/cart`, req.body);
+    res.status(response.status).send();
+  } catch (err) {
+    console.error("Add to cart failed:", err.message);
+    res.status(500).json({ error: "Failed to add to cart" });
+  }
+});
+
+// ✅ View cart by user
+app.get("/api/cart/:userId", async (req, res) => {
+  try {
+    const response = await axios.get(`${SPRING_API}/api/cart/${req.params.userId}`);
+    res.json(response.data);
+  } catch (err) {
+    console.error("View cart failed:", err.message);
+    res.status(500).json({ error: "Failed to load cart" });
+  }
+});
+
+// ✅ Remove cart item
+app.delete("/api/cart/:cartItemId", async (req, res) => {
+  try {
+    await axios.delete(`${SPRING_API}/api/cart/${req.params.cartItemId}`);
+    res.sendStatus(204);
+  } catch (err) {
+    console.error("Delete cart item failed:", err.message);
+    res.status(500).json({ error: "Failed to delete cart item" });
+  }
+});
+
 app.listen(process.env.PORT, () =>
   console.log(`✅ Express proxy running on port ${process.env.PORT}`)
 );
