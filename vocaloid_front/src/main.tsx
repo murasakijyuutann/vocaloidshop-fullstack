@@ -6,11 +6,13 @@ import App from "./App";
 import HomePage from "./pages/HomePage";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/CartPage";
+import { AuthProvider } from "./context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <CartProvider>
-    <BrowserRouter>
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />}>
           <Route index element={<HomePage />} />
@@ -20,5 +22,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       </Routes>
       </BrowserRouter>
       </CartProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

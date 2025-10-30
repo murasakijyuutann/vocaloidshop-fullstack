@@ -75,6 +75,52 @@ app.delete("/api/cart/:cartItemId", async (req, res) => {
   }
 });
 
+// ✅ Decrement cart item quantity by 1
+app.patch("/api/cart/:cartItemId/decrement", async (req, res) => {
+  try {
+    const r = await axios.patch(
+      `${SPRING_API}/api/cart/${req.params.cartItemId}/decrement`
+    );
+    res.sendStatus(r.status);
+  } catch (err) {
+    console.error("Decrement cart item failed:", err.message);
+    const status = err.response?.status || 500;
+    res.status(status).json({ error: "Failed to decrement cart item" });
+  }
+});
+
+    // ✅ Auth routes
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const r = await axios.post(`${SPRING_API}/auth/login`, req.body);
+    res.json(r.data);
+  } catch (e) {
+    res.status(401).json({ error: "Login failed" });
+  }
+});
+
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const r = await axios.post(`${SPRING_API}/auth/register`, req.body);
+    res.json(r.data);
+  } catch (e) {
+    res.status(400).json({ error: "Register failed" });
+  }
+});
+
+app.get("/api/auth/me", async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const r = await axios.get(`${SPRING_API}/auth/me`, {
+      headers: { Authorization: token },
+    });
+    res.json(r.data);
+  } catch (e) {
+    res.status(401).json({ error: "Unauthorized" });
+  }
+});
+
+
 app.listen(process.env.PORT, () =>
   console.log(`✅ Express proxy running on port ${process.env.PORT}`)
 );

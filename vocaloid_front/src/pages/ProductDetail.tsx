@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
 import axios from "axios";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../hooks/useCart";
+import { useAuth } from "../hooks/useAuth";
 
 const Container = styled.div`
   padding: 2rem;
@@ -17,8 +18,10 @@ interface Product {
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
     const [product, setProduct] = useState<Product | null>(null);
     const { addToCart } = useCart();
+    const { user } = useAuth();
 
   useEffect(() => {
     axios.get(`/api/products/${id}`)
@@ -27,10 +30,15 @@ const ProductDetail: React.FC = () => {
   }, [id]);
     
     const handleAddToCart = () => {
-  if (!product) return;
-  addToCart(product.id, 1);
-  alert("✅ Added to cart!");
-};
+      if (!product) return;
+      if (!user) {
+        // Require login before adding to cart (Option C)
+        navigate("/login", { replace: false });
+        return;
+      }
+      addToCart(product.id, 1);
+      alert("✅ Added to cart!");
+    };
     
 
   if (!product) return <Container>Loading...</Container>;
