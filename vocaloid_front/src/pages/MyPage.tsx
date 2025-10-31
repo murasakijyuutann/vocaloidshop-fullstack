@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useToast } from "../hooks/useToast";
 
 const Wrapper = styled.div`
   padding: 3rem;
@@ -41,19 +43,44 @@ const Wrapper = styled.div`
 
 
 const MyPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
+  const [nickname, setNickname] = useState("");
+  const [birthday, setBirthday] = useState("");
 
   if (!user) {
     navigate("/login", { replace: true });
     return null;
   }
 
+  const save = async () => {
+    try {
+      const payload: { nickname?: string; birthday?: string } = {};
+      if (nickname) payload.nickname = nickname;
+      if (birthday) payload.birthday = birthday;
+      await axios.patch("/auth/me", payload);
+      await refresh();
+      setNickname("");
+      setBirthday("");
+      toast("Profile updated", "success");
+    } catch {
+      toast("Could not update profile (birthday can be changed once/year)", "error");
+    }
+  };
+
   return (
     <Wrapper>
       <h1>👤 My Page</h1>
       <p><strong>Name:</strong> {user.name}</p>
+      {user.nickname && <p><strong>Nickname:</strong> {user.nickname}</p>}
       <p><strong>Email:</strong> {user.email}</p>
+      {user.birthday && <p><strong>Birthday:</strong> {new Date(user.birthday).toLocaleDateString()}</p>}
+      <div style={{marginTop: '1rem'}}>
+        <input style={{padding:'0.5rem', border:'1px solid #ddd', borderRadius:8, marginRight:8}} placeholder="New nickname" value={nickname} onChange={e => setNickname(e.target.value)} />
+        <input style={{padding:'0.5rem', border:'1px solid #ddd', borderRadius:8, marginRight:8}} type="date" value={birthday} onChange={e => setBirthday(e.target.value)} />
+        <button onClick={save}>Save</button>
+      </div>
       <button onClick={() => { logout(); navigate("/"); }}>Logout</button>
     </Wrapper>
   );

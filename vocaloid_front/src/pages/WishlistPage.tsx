@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "../hooks/useToast";
 
 const Wrapper = styled.div`
@@ -17,6 +17,16 @@ const Row = styled.div`
   justify-content: space-between;
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
   padding: 0.75rem 0;
+`;
+
+const ItemLink = styled(Link)`
+  color: inherit;
+  text-decoration: none;
+  display: block;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 interface WishlistItemDTO {
@@ -58,10 +68,10 @@ const WishlistPage: React.FC = () => {
       ) : (
         items.map(i => (
           <Row key={i.id}>
-            <div>
+            <ItemLink to={`/product/${i.productId}`} aria-label={`View ${i.productName}`}>
               <div style={{ fontWeight: 600 }}>{i.productName}</div>
               <div>¥{i.price}</div>
-            </div>
+            </ItemLink>
             <div>
               <button onClick={() => remove(i.productId)}>Remove</button>
             </div>

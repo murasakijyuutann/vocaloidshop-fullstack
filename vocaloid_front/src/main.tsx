@@ -16,6 +16,8 @@ import CheckoutPage from "./pages/CheckoutPage";
 import OrderHistoryPage from "./pages/OrderHistoryPage.tsx";
 import WishlistPage from "./pages/WishlistPage";
 import AddressesPage from "./pages/AddressesPage";
+import AdminOrdersPage from "./pages/AdminOrdersPage";
+import ContactPage from "./pages/ContactPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -31,6 +33,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="orders" element={<OrderHistoryPage />} />
+          <Route path="admin" element={<AdminOrdersPage />} />
+          <Route path="contact" element={<ContactPage />} />
           <Route path="wishlist" element={<WishlistPage />} />
           <Route path="addresses" element={<AddressesPage />} />
           <Route path="login" element={<LoginPage />} />

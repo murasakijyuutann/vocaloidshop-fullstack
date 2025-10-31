@@ -7,7 +7,20 @@ import { useCart } from "./hooks/useCart";
 import { FiMenu, FiX, FiMoon, FiSun } from "react-icons/fi";
 import { AnimatePresence } from "framer-motion";
 import { useThemeMode } from "./hooks/useThemeMode";
+import Footer from "./components/Footer";
 
+/* ====== 💡 NEW LAYOUT WRAPPER ====== */
+const Layout = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full viewport height */
+`;
+
+const Main = styled.main`
+  flex: 1; /* This expands to fill available space and pushes footer down */
+`;
+
+/* ====== EXISTING STYLES BELOW ====== */
 const Header = styled.header`
   background: ${({ theme }) => theme.colors.primary};
   color: white;
@@ -119,7 +132,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <>
+    <Layout>
       <GlobalStyle />
       <Header>
         <Title>🎵 VocaloCart</Title>
@@ -134,6 +147,7 @@ const App: React.FC = () => {
             Cart
             {itemCount > 0 && <CartBadge>{itemCount}</CartBadge>}
           </Link>
+          <Link to="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
 
           <ThemeToggle
             aria-label="Toggle dark mode"
@@ -148,6 +162,9 @@ const App: React.FC = () => {
             <>
               <Link to="/wishlist" onClick={() => setMenuOpen(false)}>Wishlist</Link>
               <Link to="/orders" onClick={() => setMenuOpen(false)}>Orders</Link>
+              {user.isAdmin && (
+                <Link to="/admin" onClick={() => setMenuOpen(false)}>Admin</Link>
+              )}
               <Link to="/addresses" onClick={() => setMenuOpen(false)}>Addresses</Link>
               <Link to="/mypage" onClick={() => setMenuOpen(false)}>My Page</Link>
               <a href="#logout" onClick={(e) => { e.preventDefault(); handleLogout(); }}>Logout</a>
@@ -160,10 +177,15 @@ const App: React.FC = () => {
           )}
         </Nav>
       </Header>
-      <AnimatePresence mode="wait">
-        <Outlet />
-      </AnimatePresence>
-    </>
+
+      <Main>
+        <AnimatePresence mode="wait">
+          <Outlet />
+        </AnimatePresence>
+      </Main>
+
+      <Footer />
+    </Layout>
   );
 };
 

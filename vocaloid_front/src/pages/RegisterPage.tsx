@@ -62,10 +62,12 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [birthday, setBirthday] = useState("");
 
   const handleRegister = async () => {
     try {
-      await register(email, password);
+      await register(email, password, { nickname: nickname || undefined, birthday: birthday || undefined });
       navigate("/");
     } catch {
       alert("Register failed");
@@ -75,6 +77,8 @@ const RegisterPage: React.FC = () => {
   return (
     <Form>
       <h2>📝 Register</h2>
+      <input placeholder="Nickname (optional)" value={nickname} onChange={e => setNickname(e.target.value)} />
+      <input type="date" placeholder="Birthday (optional)" value={birthday} onChange={e => setBirthday(e.target.value)} />
       <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
       <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
       <button onClick={handleRegister}>Create account</button>

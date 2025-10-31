@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
 import { useCart } from "../hooks/useCart";
 import { useAuth } from "../hooks/useAuth";
@@ -62,7 +62,7 @@ const CheckoutPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [placing, setPlacing] = useState(false);
-  const [addresses] = useState<Array<{id:number;recipientName:string;line1:string;line2?:string;city:string;postalCode:string;country:string;phone:string;isDefault:boolean;}>>([]);
+  const [addresses, setAddresses] = useState<Array<{id:number;recipientName:string;line1:string;line2?:string;city:string;postalCode:string;country:string;phone:string;isDefault:boolean;}>>([]);
   const [addressId, setAddressId] = useState<number | "">("");
   const toast = useToast();
 
@@ -80,12 +80,41 @@ const CheckoutPage: React.FC = () => {
       await fetchCart();
       toast("✅ Order placed!", "success");
       navigate("/orders");
-    } catch {
-      toast("Failed to place order", "error");
+    } catch (err: unknown) {
+      let msg = "Failed to place order";
+      if (typeof err === "object" && err !== null) {
+        const anyErr = err as { response?: { data?: { message?: string } }; message?: string };
+        msg = anyErr.response?.data?.message || anyErr.message || msg;
+      }
+      toast(msg, "error");
     } finally {
       setPlacing(false);
     }
   };
+
+  // Load user's saved addresses for selection
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (!user) return;
+      try {
+        const { data } = await axios.get<Array<{id:number;recipientName:string;line1:string;line2?:string;city:string;postalCode:string;country:string;phone:string;isDefault:boolean;}>>(`/api/addresses/${user.id}`);
+        setAddresses(data);
+        // Preselect default address if present
+        const def = data.find(a => a.isDefault);
+        if (def) setAddressId(def.id);
+      } catch (e: unknown) {
+        // If unauthorized, redirect to login to refresh auth
+        type AxiosErrorLike = { response?: { status?: number } };
+        const ax = (e as AxiosErrorLike);
+        if (typeof e === "object" && e !== null && ax.response?.status === 401) {
+          navigate("/login");
+          return;
+        }
+        // Keep checkout usable without saved addresses
+      }
+    };
+    loadAddresses();
+  }, [user, navigate]);
 
   if (cart.length === 0) {
     return <Wrapper>Your cart is empty.</Wrapper>;

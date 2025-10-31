@@ -14,10 +14,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      axios
-        .get("/auth/me")
-        .then(res => setUser(res.data))
-        .catch(() => logout());
+      axios.get("/auth/me").then(res => setUser(res.data)).catch(() => logout());
     } else {
       delete axios.defaults.headers.common["Authorization"];
     }
@@ -29,10 +26,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(res.data.token);
   };
 
-  const register = async (email: string, password: string) => {
-    const res = await axios.post("/auth/register", { email, password });
+  const register = async (email: string, password: string, opts?: { nickname?: string; birthday?: string }) => {
+    const payload: { email: string; password: string; nickname?: string; birthday?: string } = { email, password };
+    if (opts?.nickname) payload.nickname = opts.nickname;
+    if (opts?.birthday) payload.birthday = opts.birthday; // yyyy-MM-dd
+    const res = await axios.post("/auth/register", payload);
     localStorage.setItem("token", res.data.token);
     setToken(res.data.token);
+  };
+
+  const refresh = async () => {
+    if (!token) return;
+    const res = await axios.get("/auth/me");
+    setUser(res.data);
   };
 
   const logout = () => {
@@ -42,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, register, refresh, logout }}>
       {children}
     </AuthContext.Provider>
   );
