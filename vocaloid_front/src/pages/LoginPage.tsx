@@ -56,6 +56,23 @@ const Form = styled.div`
   }
 `;
 
+const SocialButtons = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+  }
+`;
+
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -78,6 +95,11 @@ const LoginPage: React.FC = () => {
       <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
       <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
       <button onClick={handleLogin}>Login</button>
+      <hr />
+      <SocialButtons>
+        <button onClick={() => (window.location.href = "/oauth2/authorization/google")}>Continue with Google</button>
+        <button onClick={() => (window.location.href = "/oauth2/authorization/github")}>Continue with GitHub</button>
+      </SocialButtons>
     </Form>
   );
 };

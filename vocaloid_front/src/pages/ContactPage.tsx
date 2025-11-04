@@ -7,35 +7,39 @@ import { useToast } from '../hooks/useToast';
 const Wrapper = styled(motion.div)`
   padding: 2rem;
   max-width: 640px;
-  margin: 2rem auto;
+  margin: 3rem auto;
   background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* spacing between sections */
 `;
 
 const Title = styled(motion.h1)`
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   color: ${({ theme }) => theme.colors.primary};
   text-align: center;
+  font-size: 1.8rem;
 `;
 
 const Field = styled(motion.div)`
   display: flex;
   flex-direction: column;
-  margin-bottom: 1rem;
+  gap: 0.5rem; /* space between label and input */
 `;
 
 const Label = styled.label`
-  margin-bottom: 0.4rem;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
+  font-size: 1rem;
 `;
 
 const Input = styled(motion.input)`
   width: 100%;
-  padding: 0.8rem;
+  padding: 1rem;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   transition: all 0.3s ease;
 
@@ -48,11 +52,12 @@ const Input = styled(motion.input)`
 
 const TextArea = styled(motion.textarea)`
   width: 100%;
-  padding: 0.8rem;
+  padding: 1rem;
   border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 8px;
-  min-height: 140px;
+  border-radius: 10px;
+  min-height: 180px; /* taller textarea */
   font-size: 1rem;
+  resize: vertical;
   transition: all 0.3s ease;
 
   &:focus {
@@ -64,15 +69,16 @@ const TextArea = styled(motion.textarea)`
 
 const Button = styled(motion.button)`
   width: 100%;
-  padding: 0.8rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
   background: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.3s;
-  margin-top: 0.5rem;
 
   &:hover {
     background: ${({ theme }) => theme.colors.accent};
@@ -83,6 +89,7 @@ const Button = styled(motion.button)`
     cursor: not-allowed;
   }
 `;
+
 
 const ContactPage: React.FC = () => {
   const toast = useToast();

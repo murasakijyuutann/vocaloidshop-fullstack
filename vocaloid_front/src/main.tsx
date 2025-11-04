@@ -18,6 +18,7 @@ import WishlistPage from "./pages/WishlistPage";
 import AddressesPage from "./pages/AddressesPage";
 import AdminOrdersPage from "./pages/AdminOrdersPage";
 import ContactPage from "./pages/ContactPage";
+import OAuthCallbackPage from "./pages/OAuthCallbackPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -40,6 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="mypage" element={<MyPage />} />
+          <Route path="auth/callback" element={<OAuthCallbackPage />} />
         </Route>
       </Routes>
   </BrowserRouter>

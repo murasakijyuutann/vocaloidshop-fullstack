@@ -9,6 +9,9 @@ export default defineConfig({
       '/api': 'http://localhost:8081',
       // Auth endpoints live at /auth on the backend
       '/auth': 'http://localhost:8081',
+      // OAuth2 login endpoints on backend
+      '/oauth2': 'http://localhost:8081',
+      '/login/oauth2': 'http://localhost:8081',
     },
   },
 })
