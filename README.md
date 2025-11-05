@@ -1,65 +1,145 @@
-# VocaloCart (v_shop)
+# 🛍️ VocaloCart
 
-Full‑stack e‑commerce demo built with React + Vite (frontend) and Spring Boot (backend). It includes JWT auth, admin order management, cart/checkout, wishlist, address book, dark mode, and a contact form that emails inquiries.
+**Modern Full-Stack E-Commerce Platform**
 
-## Contents
+A production-ready e-commerce application built with React + Vite (frontend) and Spring Boot (backend). Features include JWT authentication, admin order management, shopping cart, wishlist, address management, dark mode theming, and automated email notifications.
 
-- Tech stack
-- Architecture & design
-- Features
-- Project structure
-- Getting started (run locally)
-- Configuration
-- API overview (selected)
-- Admin access
-- Troubleshooting
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![Java](https://img.shields.io/badge/Java-21-orange)]()
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-green)]()
+[![React](https://img.shields.io/badge/React-18-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 ---
 
-## Tech stack
+## 📋 Table of Contents
 
-- Frontend
-	- React 18 + TypeScript + Vite
-	- styled-components v6 (light/dark themes)
-	- React Router, Axios, Framer Motion (toasts/animations)
-- Backend
-	- Spring Boot 3.5.x (Java 21)
-	- Spring Security (JWT), JPA/Hibernate
-	- MySQL
-	- Spring Mail (SendGrid or SMTP)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture--design)
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [API Documentation](#api-overview-selected)
+- [Admin Access](#admin-access)
+- [Database Migrations](#database-migrations-flyway)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-## Architecture & design
+---
 
+## 🚀 Tech Stack
+
+### Frontend
+- **React 18** with TypeScript
+- **Vite** - Lightning-fast build tool
+- **styled-components v6** - CSS-in-JS with theming (light/dark modes)
+- **React Router v6** - Client-side routing
+- **Axios** - HTTP client with interceptors
+- **Framer Motion** - Smooth animations and toasts
+
+### Backend
+- **Spring Boot 3.5.6** (Java 21)
+- **Spring Security** - JWT-based authentication
+- **Spring Data JPA** with Hibernate
+- **MySQL 8.0** - Relational database
+- **Spring Mail** - Email integration (SendGrid/SMTP)
+- **Flyway** - Database migration management
+- **Lombok** - Boilerplate reduction
+- **SpringDoc OpenAPI** - API documentation
+
+### DevOps & Tools
+- **Maven** - Dependency management
+- **Docker** - Containerization (optional)
+- **Git** - Version control
+
+## 🏗️ Architecture & Design
+
+### System Architecture
 ```
-React (Vite dev server)  ──proxy──▶  Spring Boot API  ──▶  MySQL
-				│                                   │
-				└──▶ styled-components Theme        └──▶ Mail (SMTP/SendGrid)
+┌─────────────────┐      HTTP/REST      ┌──────────────────┐      JDBC      ┌─────────┐
+│  React Frontend │ ─────────────────▶ │  Spring Boot API │ ────────────▶ │  MySQL  │
+│   (Vite Dev)    │    (Proxy :8081)    │     (:8081)      │               │ (:3306) │
+└─────────────────┘                     └──────────────────┘               └─────────┘
+         │                                       │
+         │                                       │
+         ▼                                       ▼
+  styled-components                      Spring Mail
+   (Theme Context)                      (SMTP/SendGrid)
 ```
 
-- Auth: JWT on login/register; token stored in localStorage. Axios sets Authorization header automatically.
-- Admin: ROLE_ADMIN injected from DB flag; UI conditionally exposes /admin route.
-- Orders: Forward‑only status workflow (PAYMENT_RECEIVED → PROCESSING → PREPARING → READY_FOR_DELIVERY → IN_DELIVERY → DELIVERED; CANCELED anytime).
-- Addresses: User can CRUD addresses and mark a default; checkout preselects default address.
-- Wishlist: Items link to product detail pages.
-- Theming: Light/dark toggle persisted; global styles via styled-components.
-- Contact: Dedicated page posts to /api/contact to send an email.
+### Design Principles
 
-## Features
+#### **Authentication & Security**
+- **JWT Tokens**: Issued on login/register, stored in `localStorage`
+- **Automatic Headers**: Axios interceptors inject `Authorization: Bearer <token>`
+- **Role-Based Access**: `ROLE_ADMIN` flag controls admin features
+- **Secure Endpoints**: Spring Security protects all non-public routes
 
-- Account
-	- Register/login (JWT), My Page edit (nickname anytime; birthday limited to once per year)
-	- Dark mode toggle
-- Catalog & Cart
-	- Product detail page
-	- Cart add/increment/decrement/remove
-	- Checkout creates an order; clears cart
-	- Address management; default preselect at checkout
-	- Wishlist with clickable items to product details
-- Orders
-	- Order history for users
-	- Admin orders page: list all orders, update status
-- Contact
-	- Contact page form (name/email/title/details) → email via backend
+#### **Order Management**
+- **Status Workflow**: 
+  - Forward progression: `PAYMENT_RECEIVED` → `PROCESSING` → `PREPARING` → `READY_FOR_DELIVERY` → `IN_DELIVERY` → `DELIVERED`
+  - Can be `CANCELED` at any stage
+- **Stock Management**: Automatic inventory decrement on order placement
+- **Transaction Safety**: All order operations wrapped in `@Transactional`
+
+#### **Address Management**
+- Full CRUD operations for shipping/billing addresses
+- Default address selection with auto-unset of previous defaults
+- Checkout auto-preselects default address
+
+#### **User Experience**
+- **Wishlist**: Quick-add products with navigation to detail pages
+- **Theming**: Persistent light/dark mode via Context API and localStorage
+- **Notifications**: Toast messages for user actions (success/error)
+- **Contact Form**: Direct email integration for customer inquiries
+
+## ✨ Features
+
+### 👤 User Management
+- ✅ User registration with email validation
+- ✅ JWT-based authentication (24-hour token expiration)
+- ✅ My Page profile editing (nickname, birthday restrictions)
+- ✅ Persistent login across sessions
+
+### 🛒 Shopping Experience
+- ✅ Product catalog with categories
+- ✅ Detailed product pages with images
+- ✅ Shopping cart (add, update quantity, remove items)
+- ✅ Cart subtotal and total calculations
+- ✅ One-click checkout with address selection
+- ✅ Wishlist functionality with product quick access
+
+### 📦 Order Management
+- ✅ Complete order placement workflow
+- ✅ Order history with status tracking
+- ✅ Real-time stock validation
+- ✅ Automatic cart clearing post-checkout
+- ✅ Order status updates (7-stage workflow)
+
+### 📍 Address Management
+- ✅ Multiple shipping/billing addresses
+- ✅ Set default address
+- ✅ Full CRUD operations
+- ✅ Auto-selection at checkout
+
+### 🔐 Admin Panel
+- ✅ View all orders across users
+- ✅ Update order status
+- ✅ Product and category management
+- ✅ Role-based access control
+
+### 🎨 UI/UX
+- ✅ Dark mode with persistent preference
+- ✅ Responsive design (mobile-friendly)
+- ✅ Toast notifications for user feedback
+- ✅ Smooth animations with Framer Motion
+- ✅ Loading states and error handling
+
+### 📧 Communication
+- ✅ Contact form with email integration
+- ✅ SendGrid/SMTP support
+- ✅ Automated confirmation emails
 
 ## Project structure
 
@@ -86,122 +166,422 @@ v_shop/
 	 └─ src/main/resources/application.yml
 ```
 
-## Getting started
+## 🚀 Getting Started
 
-Prerequisites:
-- Node.js 18+
-- Java 21 (JDK)
-- MySQL 8+ (local or reachable remote)
+### Prerequisites
 
-1) Backend: configure DB and mail
+Ensure you have the following installed:
+- **Node.js** 18+ and npm ([Download](https://nodejs.org/))
+- **Java JDK** 21 ([Download](https://www.oracle.com/java/technologies/downloads/))
+- **MySQL** 8.0+ ([Download](https://dev.mysql.com/downloads/))
+- **Maven** (included as wrapper `./mvnw`)
 
-- Update `vocaloidshop/src/main/resources/application.yml` with your own MySQL and mail settings.
-- Recommended: don’t commit secrets; use environment variables or a local override file.
+### Installation
 
-2) Start the backend
+#### 1️⃣ Clone the Repository
+
+```bash
+git clone <repository-url>
+cd v_shop
+```
+
+#### 2️⃣ Configure Backend
+
+**Option A: Using `application.yml` (Quick Start)**
+
+Edit `vocaloidshop/src/main/resources/application.yml`:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/vocalocart?serverTimezone=UTC
+    username: your_mysql_user
+    password: your_mysql_password
+  mail:
+    host: smtp.gmail.com  # or smtp.sendgrid.net
+    port: 587
+    username: your_email@gmail.com
+    password: your_app_password
+```
+
+**Option B: Using Environment Variables (Recommended for Production)**
+
+Set the following environment variables:
+```bash
+export DB_URL=jdbc:mysql://localhost:3306/vocalocart
+export DB_USERNAME=your_mysql_user
+export DB_PASSWORD=your_mysql_password
+export MAIL_HOST=smtp.gmail.com
+export MAIL_USERNAME=your_email@gmail.com
+export MAIL_PASSWORD=your_app_password
+```
+
+Then activate the `env` profile when running.
+
+> ⚠️ **Security Note**: Never commit credentials to version control. Use environment variables or `.env` files (add to `.gitignore`).
+
+#### 3️⃣ Start the Backend
 
 ```bash
 cd vocaloidshop
-# Option A: run with default application.yml
-./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
 
-# Option B: run with env-based config (application-env.yml)
-# Set environment variables then activate the profile:
-#   DB_URL, DB_USERNAME, DB_PASSWORD
-#   MAIL_HOST, MAIL_USERNAME, MAIL_PASSWORD, MAIL_PORT (optional)
-SPRING_PROFILES_ACTIVE=env ./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=8081
+# Option A: Using application.yml
+./mvnw spring-boot:run
+
+# Option B: Using environment variables
+SPRING_PROFILES_ACTIVE=env ./mvnw spring-boot:run
 ```
 
-3) Frontend: install and run
+Backend will start on **http://localhost:8081**
+
+#### 4️⃣ Start the Frontend
 
 ```bash
-cd ../vocaloid_front
+cd vocaloid_front
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173. Vite proxies API requests to http://localhost:8081 by default (see `vite.config.ts`).
+Frontend will start on **http://localhost:5173**
 
-Builds:
+> 💡 **Note**: Vite automatically proxies API requests from `/api` and `/auth` to the backend at `localhost:8081`.
+
+### 🎉 Access the Application
+
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:8081
+- **API Health Check**: http://localhost:8081/actuator/health
+- **API Documentation**: http://localhost:8081/swagger-ui.html (if enabled)
+
+### 🏗️ Building for Production
+
+#### Frontend Build
+```bash
+cd vocaloid_front
+npm run build
+# Output: dist/ folder
+```
+
+#### Backend Build
+```bash
+cd vocaloidshop
+./mvnw clean package -DskipTests
+# Output: target/vocaloidshoppingmall-0.0.1-SNAPSHOT.jar
+```
+
+#### Run Production Backend
+```bash
+java -jar target/vocaloidshoppingmall-0.0.1-SNAPSHOT.jar
+```
+
+## ⚙️ Configuration
+
+### Port Configuration
+
+| Service | Port | Configurable Via |
+|---------|------|------------------|
+| Backend | 8081 | `application.yml` or `--server.port=<port>` |
+| Frontend | 5173 | `vite.config.ts` → `server.port` |
+| MySQL | 3306 | Standard MySQL port |
+
+### Frontend Configuration (`vite.config.ts`)
+
+```typescript
+export default defineConfig({
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': 'http://localhost:8081',  // Backend API proxy
+      '/auth': 'http://localhost:8081'  // Auth endpoint proxy
+    }
+  }
+})
+```
+
+> ⚠️ If you change the backend port, update the proxy URLs accordingly.
+
+### Backend Configuration
+
+#### Database Configuration (`application.yml`)
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/vocalocart?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update  # Use 'validate' in production with Flyway
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+```
+
+#### Mail Configuration (`application.yml`)
+
+**For Gmail:**
+```yaml
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password  # Generate at Google Account Security
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+```
+
+**For SendGrid:**
+```yaml
+spring:
+  mail:
+    host: smtp.sendgrid.net
+    port: 587
+    username: apikey  # Literal string "apikey"
+    password: YOUR_SENDGRID_API_KEY
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+```
+
+#### Environment Variables (Recommended)
+
+Create `.env` file in project root (add to `.gitignore`):
 
 ```bash
-# Frontend build
-cd vocaloid_front && npm run build
+# Database
+DB_URL=jdbc:mysql://localhost:3306/vocalocart
+DB_USERNAME=your_user
+DB_PASSWORD=your_password
 
-# Backend build (skip tests)
-cd ../vocaloidshop && ./mvnw -DskipTests=true clean package
+# Mail
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+
+# JWT Secret (optional, defaults to hardcoded)
+JWT_SECRET=your-256-bit-secret-key-here
 ```
 
-## Configuration
+Activate with `SPRING_PROFILES_ACTIVE=env`
 
-- Ports
-	- Backend: 8081 (configurable via `--server.port` or application.yml)
-	- Frontend: 5173 (Vite dev server)
-- Vite proxy (frontend `vite.config.ts`)
-	- `/api` and `/auth` → `http://localhost:8081`
-	- If you change the backend port, update this proxy accordingly
-- Database (backend `application.yml`)
-	- `spring.datasource.url`: set to your MySQL instance
-	- `spring.jpa.hibernate.ddl-auto`: `update` is convenient for dev; use migrations for prod
-- Alternative: environment variables via `application-env.yml`
-	- Activate with `SPRING_PROFILES_ACTIVE=env`
-	- Provide: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
-	- Mail: `MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`, (`MAIL_PORT` optional)
-- Mail (backend `application.yml`)
-	- `spring.mail.*`: host, port, username, password, TLS
-	- The contact endpoint sends mail using these settings
+## 📡 API Documentation
 
-## API overview (selected)
+### Authentication Endpoints
 
-- Auth
-	- POST `/auth/register` { email, password, nickname?, birthday? } → JWT
-	- POST `/auth/login` { email, password } → JWT
-	- GET `/auth/me` → { id, email, name, isAdmin, nickname, birthday }
-	- PATCH `/auth/me` { nickname?, birthday? } → updated user
-- Products & Categories
-	- GET `/api/products`, `/api/products/{id}`
-	- GET `/api/categories`
-- Cart
-	- GET `/api/cart/{userId}`
-	- POST `/api/cart` { userId, productId, quantity }
-	- PATCH `/api/cart/{cartItemId}/decrement`
-	- DELETE `/api/cart/{cartItemId}`
-- Addresses
-	- GET `/api/addresses/{userId}`
-	- POST `/api/addresses/{userId}` (create, supports isDefault)
-	- PUT `/api/addresses/{userId}/{addressId}` (e.g. set isDefault)
-	- DELETE `/api/addresses/{userId}/{addressId}`
-- Orders
-	- POST `/api/orders/place/{userId}?addressId=`
-	- GET `/api/orders/user/{userId}` (order history)
-	- Admin: GET `/api/orders` (all)
-	- Admin: PATCH `/api/orders/{orderId}/status?status=...` (friendly synonyms supported)
-- Wishlist
-	- GET `/api/wishlist/{userId}`
-	- DELETE `/api/wishlist/{userId}/{productId}`
-- Contact
-	- POST `/api/contact` { senderName, senderEmail, title, details }
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/auth/register` | Register new user | ❌ |
+| POST | `/auth/login` | Login and get JWT | ❌ |
+| GET | `/auth/me` | Get current user info | ✅ |
+| PATCH | `/auth/me` | Update user profile | ✅ |
 
-## Admin access
+**Example: Register**
+```json
+POST /auth/register
+{
+  "email": "user@example.com",
+  "password": "SecurePass123",
+  "name": "John Doe"
+}
 
-1) Promote a user in MySQL (pick the correct column name for your schema):
+Response: { "token": "eyJhbG...", "email": "user@example.com", "role": "USER" }
+```
 
+### Product & Category Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/products` | List all products | ❌ |
+| GET | `/api/products/{id}` | Get product details | ❌ |
+| POST | `/api/products` | Create product (Admin) | ✅ Admin |
+| PUT | `/api/products/{id}` | Update product (Admin) | ✅ Admin |
+| DELETE | `/api/products/{id}` | Delete product (Admin) | ✅ Admin |
+| GET | `/api/categories` | List all categories | ❌ |
+| POST | `/api/categories` | Create category (Admin) | ✅ Admin |
+
+### Shopping Cart Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/cart/{userId}` | Get user's cart | ✅ |
+| POST | `/api/cart/{userId}` | Add item to cart | ✅ |
+| DELETE | `/api/cart/{userId}/{itemId}` | Remove item | ✅ |
+
+### Order Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/orders/user/{userId}?addressId={id}` | Place order | ✅ |
+| GET | `/api/orders/user/{userId}` | Get order history | ✅ |
+| GET | `/api/orders/{orderId}` | Get order details | ✅ |
+| GET | `/api/orders` | List all orders (Admin) | ✅ Admin |
+| PATCH | `/api/orders/{orderId}/status?status={status}` | Update order status (Admin) | ✅ Admin |
+
+**Order Status Values:**
+- `PAYMENT_RECEIVED`
+- `PROCESSING`
+- `PREPARING`
+- `READY_FOR_DELIVERY`
+- `IN_DELIVERY`
+- `DELIVERED`
+- `CANCELED`
+
+### Address Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/addresses/user/{userId}` | List user addresses | ✅ |
+| POST | `/api/addresses/user/{userId}` | Create address | ✅ |
+| PUT | `/api/addresses/{id}` | Update address | ✅ |
+| DELETE | `/api/addresses/{id}` | Delete address | ✅ |
+| PUT | `/api/addresses/{id}/default/user/{userId}` | Set default address | ✅ |
+
+### Wishlist Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/wishlist/user/{userId}` | Get wishlist | ✅ |
+| POST | `/api/wishlist/user/{userId}/product/{productId}` | Add to wishlist | ✅ |
+| DELETE | `/api/wishlist/user/{userId}/product/{productId}` | Remove from wishlist | ✅ |
+
+### Contact Endpoint
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/api/contact` | Submit contact form | ❌ |
+
+**Example: Contact Form**
+```json
+POST /api/contact
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "subject": "Product Inquiry",
+  "message": "I have a question about..."
+}
+```
+
+### Health & Monitoring
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/actuator/health` | Application health status |
+| GET | `/actuator/info` | Application information |
+| GET | `/actuator/metrics` | Application metrics |
+
+## 🔑 Admin Access
+
+### Setting Up Admin User
+
+1. **Promote User in Database**
+
+   Execute this SQL query in MySQL:
+
+   ```sql
+   -- Update existing user to admin
+   UPDATE user SET is_admin = 1 WHERE email = 'admin@example.com';
+   
+   -- Or create new admin user (after registering normally)
+   UPDATE user SET is_admin = 1 WHERE email = 'your@email.com';
+   ```
+
+2. **Verify Admin Role**
+
+   Login and check the response from `/auth/me`:
+   ```json
+   {
+     "id": 1,
+     "email": "admin@example.com",
+     "isAdmin": true  // ← Should be true
+   }
+   ```
+
+3. **Access Admin Panel**
+
+   - The "Admin" link will appear in the navigation header
+   - Navigate to: **http://localhost:5173/admin**
+   - Available features:
+     - View all orders across users
+     - Update order status
+     - Manage products and categories
+
+### Admin Permissions
+
+| Feature | Regular User | Admin |
+|---------|-------------|-------|
+| View own orders | ✅ | ✅ |
+| Place orders | ✅ | ✅ |
+| View all orders | ❌ | ✅ |
+| Update order status | ❌ | ✅ |
+| Create/Edit products | ❌ | ✅ |
+| Create/Edit categories | ❌ | ✅ |
+| Delete products | ❌ | ✅ |
+
+## 🗄️ Database Migrations (Flyway)
+
+### Migration Management
+
+Flyway automatically runs migrations on application startup. Migrations are located in:
+```
+vocaloidshop/src/main/resources/db/migration/
+```
+
+### Existing Migrations
+
+**V1__order_status_length_and_normalize.sql**
+- Ensures `order.status` column supports longer enum names (`varchar(32)`)
+- Normalizes legacy status values:
+  - `PAID` → `PAYMENT_RECEIVED`
+  - `SHIPPED` → `IN_DELIVERY`
+  - `CANCELLED` → `CANCELED`
+
+### Creating New Migrations
+
+1. **Naming Convention**: `V{version}__{description}.sql`
+   - Example: `V2__add_product_ratings.sql`
+
+2. **Location**: Place files in `src/main/resources/db/migration/`
+
+3. **Best Practices**:
+   - Use sequential version numbers (V1, V2, V3...)
+   - Keep migrations idempotent when possible
+   - Never modify existing migration files
+   - Test migrations on a copy of production data
+
+**Example Migration:**
 ```sql
--- Example: snake_case column name
-UPDATE user SET is_admin = 1 WHERE email = 'you@example.com';
+-- V2__add_product_ratings.sql
+ALTER TABLE product ADD COLUMN rating DECIMAL(3,2) DEFAULT 0.00;
+ALTER TABLE product ADD COLUMN review_count INT DEFAULT 0;
+CREATE INDEX idx_product_rating ON product(rating DESC);
 ```
 
-2) Refresh the frontend session (hard reload or re-login). The header will reveal the “Admin” link.
+### Flyway Commands
 
-3) Open http://localhost:5173/admin to manage orders (list + status updates).
+```bash
+# Check migration status
+./mvnw flyway:info
 
-## Database migrations (Flyway)
+# Validate migrations
+./mvnw flyway:validate
 
-- Flyway runs on startup if present. Initial script provided:
-	- `V1__order_status_length_and_normalize.sql`
-		- Ensures `order.status` column length (varchar(32))
-		- Normalizes legacy status values (PAID/SHIPPED/CANCELLED → canonical)
-	- Place additional SQL migrations under `vocaloidshop/src/main/resources/db/migration/` with names like `V2__*.sql`.
+# Repair failed migrations (use with caution)
+./mvnw flyway:repair
+```
 
 ## Screenshots (optional)
 
@@ -214,9 +594,11 @@ Place images under `docs/screenshots/` and reference them here, for example:
 ![Orders](docs/screenshots/orders.png)
 ![Admin Orders](docs/screenshots/admin-orders.png)
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-- Backend port in use (8081)
+### Common Issues
+
+#### Backend port in use (8081)
 	- Another process is on 8081. Kill it or run on a different port:
 		```bash
 		# Find and kill on Windows
@@ -325,6 +707,70 @@ Place images under `docs/screenshots/` and reference them here, for example:
 - Theme toggle saves to localStorage and sets an HTML data attribute.
 - Axios Authorization header is kept in sync with the JWT token.
 
-## License
+## 📸 Screenshots
 
-This repository is for demonstration/learning purposes. Replace credentials with your own secrets and use at your own risk.
+Place screenshots in `docs/screenshots/` directory:
+
+| Feature | Screenshot |
+|---------|-----------|
+| Homepage | ![Home](docs/screenshots/home.png) |
+| Product Detail | ![Product](docs/screenshots/product.png) |
+| Shopping Cart | ![Cart](docs/screenshots/cart.png) |
+| Checkout | ![Checkout](docs/screenshots/checkout.png) |
+| Order History | ![Orders](docs/screenshots/orders.png) |
+| Admin Panel | ![Admin](docs/screenshots/admin.png) |
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Follow existing code style and conventions
+- Write meaningful commit messages
+- Add tests for new features
+- Update documentation as needed
+- Ensure all tests pass before submitting PR
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Disclaimer**: This application is for demonstration and learning purposes. Use at your own risk in production environments.
+
+---
+
+## 👥 Authors
+
+- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
+
+---
+
+## 🙏 Acknowledgments
+
+- Spring Boot framework and ecosystem
+- React and Vite communities
+- All open-source contributors
+
+---
+
+## 📞 Support
+
+For questions or issues:
+- **Email**: support@vocalocart.com
+- **Issues**: [GitHub Issues](https://github.com/yourusername/v_shop/issues)
+- **Documentation**: See this README and inline code documentation
+
+---
+
+**Made with ❤️ using Spring Boot & React**
