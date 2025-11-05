@@ -5,6 +5,7 @@ import ToastProvider from "./components/ToastProvider";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./context/CartContext";
 import App from "./App";
+import './index.css';
 import HomePage from "./pages/HomePage";
 import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/CartPage";
