@@ -1,0 +1,60 @@
+server:
+  port: ${SERVER_PORT:8081}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+      enabled: true
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/vocalocart?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:changeme}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        "[format_sql]": true
+        "[highlight_sql]": true
+        "[globally_quoted_identifiers]": true
+    show-sql: ${JPA_SHOW_SQL:true}
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+  mail:
+    host: ${MAIL_HOST:smtp.sendgrid.net}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:apikey}
+    password: ${MAIL_PASSWORD:changeme}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          from: "noreply@vocalocart.com"
+        transport:
+          protocol: smtp
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+
+app:
+  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
+logging:
+  level:
+    "[org.hibernate.SQL]": debug
+    "[org.hibernate.orm.jdbc.bind]": trace
