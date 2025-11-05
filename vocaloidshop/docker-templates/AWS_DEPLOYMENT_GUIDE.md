@@ -350,16 +350,65 @@ curl http://$PUBLIC_IP:8081/swagger-ui.html
 
 ### Step 1: Install EB CLI
 
-```bash
-pip install awsebcli --upgrade --user
+#### Windows Installation:
 
-# Verify installation
+**⚠️ IMPORTANT: You must restart VS Code completely after Python installation for PATH to update!**
+
+**Method 1: Using Python (Recommended)**
+
+1. **Close VS Code completely** (File → Exit)
+2. **Reopen VS Code**
+3. Open a **new terminal** and run:
+
+```bash
+python -m pip install awsebcli --upgrade --user
+```
+
+4. Add Python Scripts to PATH:
+   - Press `Win + R`, type `sysdm.cpl`, press Enter
+   - Go to **Advanced** → **Environment Variables**
+   - Under **User variables**, select **Path** → **Edit**
+   - Click **New** and add: `%USERPROFILE%\AppData\Roaming\Python\Python312\Scripts`
+   - Click **OK** on all dialogs
+
+5. **Restart terminal** and verify:
+```bash
+eb --version
+```
+
+**Method 2: Using AWS EB CLI Setup Script (Alternative)**
+
+Open **PowerShell as Administrator** and run:
+
+```powershell
+# Clone the setup repository
+git clone https://github.com/aws/aws-elastic-beanstalk-cli-setup.git
+cd aws-elastic-beanstalk-cli-setup
+
+# Run the bundled installer
+python .\scripts\ebcli_installer.py
+
+# Add to PATH (replace USERNAME with your Windows username)
+$env:Path += ";C:\Users\USERNAME\.ebcli-virtual-env\executables"
+
+# Verify
+eb --version
+```
+
+**Method 3: Direct pip3 Installation (If pip3 is available)**
+
+```bash
+pip3 install awsebcli --upgrade --user
 eb --version
 ```
 
 ### Step 2: Create Dockerrun.aws.json
 
-Create this file in your `vocaloidshop` directory:
+**Create a file named `Dockerrun.aws.json` (case-sensitive!)** in your `vocaloidshop` directory:
+
+```bash
+# Path: vocaloidshop/Dockerrun.aws.json
+```
 
 ```json
 {
@@ -386,6 +435,12 @@ Create this file in your `vocaloidshop` directory:
   ]
 }
 ```
+
+**⚠️ Important Notes:**
+- Filename MUST be exactly `Dockerrun.aws.json` (capital D, capital R)
+- Replace `123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/vocalocart-backend:latest` with your actual ECR image URI
+- Replace RDS endpoint with your actual RDS endpoint
+- Do NOT commit database passwords here - use `eb setenv` for secrets (Step 3)
 
 ### Step 3: Initialize and Deploy
 

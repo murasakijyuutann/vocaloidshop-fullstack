@@ -1,0 +1,71 @@
+{
+  "family": "vocalocart-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "vocalocart-backend",
+      "image": "410766693536.dkr.ecr.ap-northeast-2.amazonaws.com/vocalocart-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8081,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:mysql://mydb.czwaweqgeexp.ap-northeast-2.rds.amazonaws.com:3306/vocalocart?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+        },
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "value": "root"
+        },
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "value": "DoodyDanks48"
+        },
+        {
+          "name": "MAIL_HOST",
+          "value": "smtp.sendgrid.net"
+        },
+        {
+          "name": "MAIL_PORT",
+          "value": "587"
+        },
+        {
+          "name": "MAIL_USERNAME",
+          "value": "apikey"
+        },
+        {
+          "name": "SERVER_PORT",
+          "value": "8081"
+        },
+        {
+          "name": "JPA_DDL_AUTO",
+          "value": "update"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/vocalocart-backend",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ],
+  "executionRoleArn": "arn:aws:iam::410766693536:role/ecsTaskExecutionRole"
+}

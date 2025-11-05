@@ -1,0 +1,43 @@
+{
+  "AWSEBDockerrunVersion": "1",
+  "Image": {
+    "Name": "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/vocalocart-backend:latest",
+    "Update": "true"
+  },
+  "Ports": [
+    {
+      "ContainerPort": 8081,
+      "HostPort": 8081
+    }
+  ],
+  "Environment": [
+    {
+      "Name": "SPRING_DATASOURCE_URL",
+      "Value": "jdbc:mysql://mydb.czwaweqgeexp.ap-northeast-2.rds.amazonaws.com:3306/vocalocart?serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+    },
+    {
+      "Name": "SPRING_DATASOURCE_USERNAME",
+      "Value": "root"
+    },
+    {
+      "Name": "MAIL_HOST",
+      "Value": "smtp.sendgrid.net"
+    },
+    {
+      "Name": "MAIL_PORT",
+      "Value": "587"
+    },
+    {
+      "Name": "MAIL_USERNAME",
+      "Value": "apikey"
+    },
+    {
+      "Name": "SERVER_PORT",
+      "Value": "8081"
+    },
+    {
+      "Name": "JPA_DDL_AUTO",
+      "Value": "update"
+    }
+  ]
+}

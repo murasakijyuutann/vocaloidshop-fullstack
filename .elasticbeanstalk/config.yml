@@ -1,0 +1,14 @@
+branch-defaults:
+  main:
+    environment: vocalocart-prod
+global:
+  application_name: vocalocart-backend
+  branch: null
+  default_platform: Docker
+  default_region: ap-northeast-2
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: null
+  repository: null
+  workspace_type: Application
