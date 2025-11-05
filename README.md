@@ -185,7 +185,54 @@ git clone <repository-url>
 cd v_shop
 ```
 
-#### 2️⃣ Configure Backend
+#### 2️⃣ Set Up MySQL Database
+
+Before running the application, you **must create a MySQL database**.
+
+**Step 1: Create Database**
+
+Connect to your MySQL server and create a new database:
+
+```sql
+-- Option 1: Using MySQL command line
+mysql -u root -p
+
+-- Then run:
+CREATE DATABASE vocalocart CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Grant permissions (if using a specific user)
+CREATE USER 'vocalocart_user'@'localhost' IDENTIFIED BY 'your_secure_password';
+GRANT ALL PRIVILEGES ON vocalocart.* TO 'vocalocart_user'@'localhost';
+FLUSH PRIVILEGES;
+
+-- Verify database was created
+SHOW DATABASES;
+```
+
+**Step 2: Verify Connection**
+
+Test your database connection:
+```bash
+mysql -u vocalocart_user -p vocalocart
+# Enter your password when prompted
+# If successful, you'll see: mysql>
+```
+
+> 💡 **Note**: 
+> - The database name `vocalocart` can be changed, but update the JDBC URL accordingly
+> - Spring Boot will automatically create tables on first run (via Hibernate `ddl-auto: update`)
+> - No need to manually create tables - JPA handles schema generation
+
+**Alternative: Using MySQL Workbench or phpMyAdmin**
+1. Open MySQL Workbench
+2. Connect to your MySQL server
+3. Right-click "Schemas" → "Create Schema"
+4. Name: `vocalocart`
+5. Character Set: `utf8mb4`
+6. Collation: `utf8mb4_unicode_ci`
+7. Click "Apply"
+
+#### 3️⃣ Configure Backend
 
 **Option A: Using `application.yml` (Quick Start)**
 
@@ -195,8 +242,8 @@ Edit `vocaloidshop/src/main/resources/application.yml`:
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/vocalocart?serverTimezone=UTC
-    username: your_mysql_user
-    password: your_mysql_password
+    username: vocalocart_user  # Use YOUR database username
+    password: your_secure_password  # Use YOUR database password
   mail:
     host: smtp.gmail.com  # or smtp.sendgrid.net
     port: 587
@@ -204,13 +251,15 @@ spring:
     password: your_app_password
 ```
 
+> ⚠️ **Important**: Replace these with YOUR actual database credentials created in Step 2!
+
 **Option B: Using Environment Variables (Recommended for Production)**
 
-Set the following environment variables:
+Set the following environment variables with YOUR database credentials:
 ```bash
 export DB_URL=jdbc:mysql://localhost:3306/vocalocart
-export DB_USERNAME=your_mysql_user
-export DB_PASSWORD=your_mysql_password
+export DB_USERNAME=vocalocart_user  # YOUR database username
+export DB_PASSWORD=your_secure_password  # YOUR database password
 export MAIL_HOST=smtp.gmail.com
 export MAIL_USERNAME=your_email@gmail.com
 export MAIL_PASSWORD=your_app_password
@@ -358,15 +407,17 @@ spring:
 
 #### Environment Variables (Recommended)
 
-Create `.env` file in project root (add to `.gitignore`):
+> ⚠️ **IMPORTANT**: The `.env` file is NOT included in this repository for security reasons. You MUST create your own!
+
+Create a `.env` file in the project root directory:
 
 ```bash
-# Database
+# Database - USE YOUR OWN CREDENTIALS!
 DB_URL=jdbc:mysql://localhost:3306/vocalocart
-DB_USERNAME=your_user
-DB_PASSWORD=your_password
+DB_USERNAME=vocalocart_user  # Your MySQL username
+DB_PASSWORD=your_secure_password  # Your MySQL password
 
-# Mail
+# Mail - USE YOUR OWN EMAIL CREDENTIALS!
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USERNAME=your_email@gmail.com
@@ -644,6 +695,23 @@ Place images under `docs/screenshots/` and reference them here, for example:
 		- Ensure requests include `Authorization: Bearer <token>` (check DevTools → Network).
 
 	- Database connection issues (MySQL)
+		- **"Access denied for user"**: Your database credentials are incorrect. Verify username/password in `application.yml`
+		- **"Unknown database 'vocalocart'"**: You haven't created the database. Follow Step 2 in Getting Started to create it:
+			```sql
+			CREATE DATABASE vocalocart;
+			```
+		- **"Communications link failure"**: MySQL server isn't running. Start MySQL service:
+			```bash
+			# Windows
+			net start MySQL80
+			
+			# macOS/Linux
+			sudo service mysql start
+			# or
+			brew services start mysql
+			```
+		- **Wrong port**: Default MySQL port is 3306. If yours is different, update the JDBC URL
+		- **Timezone issues**: Add `?serverTimezone=UTC` to your JDBC URL
 		- Check timezone/encoding in JDBC URL: `?serverTimezone=Asia/Seoul&characterEncoding=UTF-8`.
 		- Verify credentials and that the DB host is reachable from your machine.
 		- If using Flyway and `ddl-auto=update`, avoid conflicts: prefer Flyway for structural changes in shared environments.
@@ -752,7 +820,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
+- **Fishyboyxx** - *Initial work* - [MyGitHub](https://github.com/murasakijyuutann)
 
 ---
 
@@ -768,7 +836,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions or issues:
 - **Email**: support@vocalocart.com
-- **Issues**: [GitHub Issues](https://github.com/yourusername/v_shop/issues)
+- **Issues**: [GitHub Issues](https://github.com/murasakijyuutann/v_shop/issues)
 - **Documentation**: See this README and inline code documentation
 
 ---
