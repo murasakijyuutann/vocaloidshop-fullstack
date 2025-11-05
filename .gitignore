@@ -17,6 +17,10 @@ pnpm-debug.log*
 .env.development
 .env.production
 .env.test
+**/.env
+
+### ⚠️ Keep example files
+!.env.example
 
 ### ⚙️ IDE / Editor
 .vscode/
