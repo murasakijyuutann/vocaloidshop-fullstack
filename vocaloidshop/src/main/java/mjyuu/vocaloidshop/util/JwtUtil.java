@@ -28,11 +28,11 @@ public class JwtUtil {
 
     public Claims validateToken(String token) {
         try {
-            return Jwts.parser()
-                    .verifyWith((javax.crypto.SecretKey) key)
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)
                     .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+                    .parseClaimsJws(token)
+                    .getBody();
         } catch (JwtException e) {
             throw new RuntimeException("Invalid or expired token");
         }
