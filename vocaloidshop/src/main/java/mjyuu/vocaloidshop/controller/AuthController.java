@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import mjyuu.vocaloidshop.dto.AuthRequestDTO;
 import mjyuu.vocaloidshop.dto.AuthResponseDTO;
 import mjyuu.vocaloidshop.entity.User;
+import mjyuu.vocaloidshop.exception.DuplicateResourceException;
+import mjyuu.vocaloidshop.exception.InvalidCredentialsException;
 import mjyuu.vocaloidshop.repository.UserRepository;
 import mjyuu.vocaloidshop.util.JwtUtil;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +26,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody AuthRequestDTO request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().build();
+            throw new DuplicateResourceException("User", "email", request.getEmail());
         }
         
         User user = User.builder()
@@ -53,10 +55,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody AuthRequestDTO request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElse(null);
+                .orElseThrow(() -> new InvalidCredentialsException());
         
-        if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.badRequest().build();
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException();
         }
         
         String token = jwtUtil.generateToken(user.getId(), user.getEmail());

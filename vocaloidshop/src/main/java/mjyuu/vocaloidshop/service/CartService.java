@@ -5,6 +5,7 @@ import mjyuu.vocaloidshop.dto.AddToCartRequestDTO;
 import mjyuu.vocaloidshop.entity.CartItem;
 import mjyuu.vocaloidshop.entity.Product;
 import mjyuu.vocaloidshop.entity.User;
+import mjyuu.vocaloidshop.exception.ResourceNotFoundException;
 import mjyuu.vocaloidshop.repository.CartItemRepository;
 import mjyuu.vocaloidshop.repository.ProductRepository;
 import mjyuu.vocaloidshop.repository.UserRepository;
@@ -25,10 +26,10 @@ public class CartService {
     @Transactional
     public CartItem addToCart(Long userId, AddToCartRequestDTO request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", request.getProductId()));
 
         // Check if product already in cart
         Optional<CartItem> existingItem = cartItemRepository.findByUserAndProduct(user, product);
@@ -53,14 +54,14 @@ public class CartService {
     @Transactional(readOnly = true)
     public List<CartItem> getUserCart(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userId));
         return cartItemRepository.findByUser(user);
     }
 
     @Transactional
     public void updateCartItemQuantity(Long cartItemId, Integer quantity) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", cartItemId));
         
         if (quantity <= 0) {
             cartItemRepository.delete(cartItem);
@@ -73,7 +74,7 @@ public class CartService {
     @Transactional
     public void removeFromCart(Long cartItemId) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", cartItemId));
         cartItemRepository.delete(cartItem);
     }
 
