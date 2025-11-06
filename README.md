@@ -818,7 +818,38 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 👥 Authors
+## � Documentation
+
+All project documentation is organized in the `/docs` folder:
+
+### 📂 Documentation Structure
+
+| Folder | Contents |
+|--------|----------|
+| **`/docs/guides/`** | Setup and how-to guides |
+| **`/docs/architecture/`** | Project structure and quality roadmaps |
+| **`/docs/deployment/`** | AWS deployment and troubleshooting |
+| **`/docs/reference/`** | API docs, database schema, SQL scripts |
+| **`/docs/deployment-history/`** | Historical deployment records |
+| **`/docs/analysis/`** | Technical analysis and guides |
+
+### 📖 Key Documents
+
+- **[Documentation Index](docs/README.md)** - Complete documentation guide
+- **[Project Overview](docs/architecture/01_PROJECT_OVERVIEW.md)** - High-level architecture
+- **[Backend Setup](docs/guides/02_BACKEND_SETUP.md)** - Spring Boot setup guide
+- **[Frontend Setup](docs/guides/03_FRONTEND_SETUP.md)** - React setup guide
+- **[AWS Deployment](docs/deployment/04_AWS_DEPLOYMENT.md)** - Complete deployment guide
+- **[API Documentation](docs/reference/05_API_DOCUMENTATION.md)** - Detailed API reference
+- **[Database Schema](docs/reference/10_DATABASE_SCHEMA.md)** - Complete schema with ER diagrams
+- **[Improvement Summary](docs/architecture/08_IMPROVEMENT_SUMMARY.md)** - Recent improvements (tests, exceptions)
+- **[Path to Excellence](docs/architecture/09_PATH_TO_EXCELLENCE.md)** - Quality improvement roadmap
+
+See **[/docs/README.md](docs/README.md)** for the complete documentation index.
+
+---
+
+## �👥 Authors
 
 - **Fishyboyxx** - *Initial work* - [MyGitHub](https://github.com/murasakijyuutann)
 
