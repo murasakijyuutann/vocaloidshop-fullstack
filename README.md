@@ -57,10 +57,10 @@ A production-ready e-commerce application built with React + Vite (frontend) and
 
 ### System Architecture
 ```
-┌─────────────────┐      HTTP/REST      ┌──────────────────┐      JDBC      ┌─────────┐
-│  React Frontend │ ─────────────────▶ │  Spring Boot API │ ────────────▶ │  MySQL  │
-│   (Vite Dev)    │    (Proxy :8081)    │     (:8081)      │               │ (:3306) │
-└─────────────────┘                     └──────────────────┘               └─────────┘
+┌─────────────────┐      HTTP/REST      ┌──────────────────┐      JDBC       ┌─────────┐
+│  React Frontend │ ─────────────────▶│  Spring Boot API │ ────────────▶ │  MySQL  │
+│   (Vite Dev)    │    (Proxy :8081)    │     (:8081)      │                 │ (:3306) │
+└─────────────────┘                     └──────────────────┘                 └─────────┘
          │                                       │
          │                                       │
          ▼                                       ▼
