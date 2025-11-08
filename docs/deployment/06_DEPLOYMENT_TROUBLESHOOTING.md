@@ -402,6 +402,116 @@ curl http://52.78.236.250:8081/api/products
 
 ---
 
+---
+
+## Full-Stack Deployment Challenges
+
+### Overview
+
+While the backend was successfully deployed to AWS ECS Fargate and the frontend was built and uploaded to S3/CloudFront, achieving complete end-to-end integration with seamless frontend-backend communication in production presented significant challenges that remain unresolved.
+
+### What Works ✅
+
+- **Backend Deployment**: Successfully deployed to AWS ECS Fargate with RDS MySQL
+- **Backend API**: All endpoints functional and tested via `curl`
+- **Frontend Build**: React app builds successfully with production optimizations
+- **Frontend Hosting**: Static files uploaded to S3 and distributed via CloudFront
+- **Local Development**: Full-stack application works perfectly in local environment
+
+### Integration Challenges ❌
+
+#### 1. CORS Configuration Issues
+**Challenge**: Frontend requests from CloudFront domain blocked by CORS policy
+
+**Attempted Solutions**:
+- Configured Spring Security CORS to allow CloudFront origin
+- Added proper CORS headers in backend responses
+- Tested with different CORS configurations
+
+**Status**: Partial success - some endpoints work, inconsistent behavior
+
+#### 2. API Gateway vs Direct ECS Access
+**Challenge**: Deciding between exposing ECS directly or using API Gateway
+
+**Considerations**:
+- **Direct ECS**: Simpler, but IP changes when tasks restart
+- **Application Load Balancer**: Static DNS, but adds cost and complexity
+- **API Gateway**: Best practice, but requires additional configuration
+
+**Status**: Backend accessible via public IP, but not production-ready without stable endpoint
+
+#### 3. Environment Configuration Complexity
+**Challenge**: Managing different configurations for dev vs production
+
+**Issues Encountered**:
+- Different API base URLs (localhost:8081 vs AWS endpoints)
+- CORS origins must match exact production domains
+- Database connection strings different between local and RDS
+- JWT secrets and email credentials management
+
+**Status**: Configuration exists but requires careful coordination
+
+#### 4. HTTPS/SSL Certificate Management
+**Challenge**: Mixed content warnings when HTTPS frontend calls HTTP backend
+
+**Requirements**:
+- CloudFront requires HTTPS for custom domains
+- Backend needs SSL certificate or ALB for HTTPS
+- Certificate provisioning through AWS Certificate Manager
+
+**Status**: Not implemented - would require domain purchase and ACM setup
+
+#### 5. Frontend-Backend Communication Architecture
+**Challenge**: Coordinating requests across different AWS services
+
+**Specific Issues**:
+- Frontend environment variable configuration for API endpoints
+- Proxy configuration only works in development (Vite dev server)
+- Production build requires hardcoded API URLs
+- Different networking contexts between local and cloud
+
+**Status**: Architecture designed but full integration not completed
+
+### Key Learnings
+
+1. **Infrastructure Complexity**: Deploying separate frontend and backend services requires careful orchestration of multiple AWS services (S3, CloudFront, ECS, RDS, potentially ALB/API Gateway)
+
+2. **CORS is Non-Trivial**: Production CORS configuration is more complex than development, requiring exact origin matching and proper headers across all endpoints
+
+3. **Cost Considerations**: Full production setup (ALB, NAT Gateway, API Gateway) can exceed free tier limits significantly
+
+4. **Environment Parity**: Maintaining dev/prod parity requires sophisticated configuration management and environment variable handling
+
+5. **Networking Knowledge Required**: Understanding VPCs, security groups, routing, and load balancing is essential for production deployments
+
+### What Would Be Needed for Full Production Deployment
+
+**Required Steps**:
+1. ✅ Purchase and configure custom domain
+2. ✅ Set up Application Load Balancer for stable backend endpoint
+3. ✅ Configure SSL certificates via AWS Certificate Manager
+4. ✅ Update frontend API base URL to ALB DNS/domain
+5. ✅ Comprehensive CORS testing across all endpoints
+6. ✅ Environment variable management solution (AWS Parameter Store/Secrets Manager)
+7. ✅ CI/CD pipeline for automated deployments
+8. ✅ Monitoring and logging setup (CloudWatch integration)
+9. ✅ Cost optimization review
+
+**Estimated Additional Time**: 8-12 hours for experienced AWS developer
+
+**Estimated Cost**: $15-30/month beyond free tier (ALB + potential data transfer)
+
+### Current Status
+
+**Development**: Fully functional ✅
+**Backend Deployment**: Working ✅
+**Frontend Deployment**: Static hosting working ✅
+**Full Integration**: Not completed ⚠️
+
+The application demonstrates complete full-stack functionality in local development and has successfully deployed individual components to AWS. The remaining work is primarily DevOps and infrastructure integration rather than application development.
+
+---
+
 ## Next Document
 
 See `AWS_STATIC_IP_SETUP.md` for solving the changing IP address problem with Application Load Balancer.

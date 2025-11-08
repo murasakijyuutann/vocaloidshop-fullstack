@@ -2,12 +2,12 @@
 
 **Modern Full-Stack E-Commerce Platform**
 
-A production-ready e-commerce application built with React + Vite (frontend) and Spring Boot (backend). Features include JWT authentication, admin order management, shopping cart, wishlist, address management, dark mode theming, and automated email notifications.
+A feature-complete e-commerce application built with React + Vite (frontend) and Spring Boot (backend). Features include JWT authentication, admin order management, shopping cart, wishlist, address management, dark mode theming, and automated email notifications.
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
 [![Java](https://img.shields.io/badge/Java-21-orange)]()
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-green)]()
 [![React](https://img.shields.io/badge/React-18-blue)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-blue)]()
 
 ---
@@ -634,17 +634,6 @@ CREATE INDEX idx_product_rating ON product(rating DESC);
 ./mvnw flyway:repair
 ```
 
-## Screenshots (optional)
-
-Place images under `docs/screenshots/` and reference them here, for example:
-
-![Home](docs/screenshots/home.png)
-![Product Detail](docs/screenshots/product.png)
-![Cart](docs/screenshots/cart.png)
-![Checkout](docs/screenshots/checkout.png)
-![Orders](docs/screenshots/orders.png)
-![Admin Orders](docs/screenshots/admin-orders.png)
-
 ## 🔧 Troubleshooting
 
 ### Common Issues
@@ -792,21 +781,10 @@ Place screenshots in `docs/screenshots/` directory:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Guidelines
-
-- Follow existing code style and conventions
-- Write meaningful commit messages
-- Add tests for new features
-- Update documentation as needed
-- Ensure all tests pass before submitting PR
+This is a portfolio project showcasing full-stack development skills. Feel free to:
+- Fork the repository for your own learning
+- Use it as a reference for similar projects
+- Report bugs or suggest improvements via [GitHub Issues](https://github.com/murasakijyuutann/v_shop/issues)
 
 ---
 
@@ -818,7 +796,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## � Documentation
+## 📚 Documentation
 
 All project documentation is organized in the `/docs` folder:
 
@@ -849,9 +827,9 @@ See **[/docs/README.md](docs/README.md)** for the complete documentation index.
 
 ---
 
-## �👥 Authors
+## 👥 Author
 
-- **Fishyboyxx** - *Initial work* - [MyGitHub](https://github.com/murasakijyuutann)
+- **Fishyboyxx** - [GitHub](https://github.com/murasakijyuutann)
 
 ---
 
@@ -866,9 +844,8 @@ See **[/docs/README.md](docs/README.md)** for the complete documentation index.
 ## 📞 Support
 
 For questions or issues:
-- **Email**: support@vocalocart.com
-- **Issues**: [GitHub Issues](https://github.com/murasakijyuutann/v_shop/issues)
-- **Documentation**: See this README and inline code documentation
+- **GitHub Issues**: [Report bugs or request features](https://github.com/murasakijyuutann/v_shop/issues)
+- **Documentation**: See this README and the `/docs` folder for detailed guides
 
 ---
 
