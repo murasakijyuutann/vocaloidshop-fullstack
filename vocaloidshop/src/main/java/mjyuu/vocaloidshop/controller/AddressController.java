@@ -40,6 +40,9 @@ public class AddressController {
     @GetMapping("/{id}")
     public ResponseEntity<AddressResponseDTO> getAddress(@PathVariable Long id) {
         Address address = addressService.getAddress(id);
+        if (address == null) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(toResponseDTO(address));
     }
 
@@ -66,6 +69,9 @@ public class AddressController {
     }
 
     private AddressResponseDTO toResponseDTO(Address address) {
+        if (address == null) {
+            return null;
+        }
         return AddressResponseDTO.builder()
                 .id(address.getId())
                 .recipientName(address.getRecipientName())
