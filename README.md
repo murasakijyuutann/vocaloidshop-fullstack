@@ -2,6 +2,34 @@
 
 **Modern Full-Stack E-Commerce Platform**
 
+> [!WARNING]
+> **🚧 PROJECT UNDER CONSTRUCTION - MIGRATION IN PROGRESS 🚧**
+> 
+> This project is currently being migrated from **React + Spring Boot** to **Next.js 15 Full-Stack**.
+> 
+> **Current Status:** Planning & Documentation Phase  
+> **Expected Completion:** February 2026
+> 
+> 📚 **Migration Documentation:**
+> - [Migration Plan](NEXTJS_MIGRATION_PLAN.md) - Complete migration strategy with architecture diagrams
+> - [Setup Guide](NEXTJS_SETUP_GUIDE.md) - Step-by-step Next.js setup instructions
+> - [API Migration Guide](API_MIGRATION_GUIDE.md) - Endpoint mapping and code examples
+> - [Code Comparison](CODE_SIZE_COMPARISON.md) - Detailed analysis (57% code reduction)
+> 
+> **Why migrate?**
+> - 57% less code to maintain
+> - 90% faster build times
+> - Single deployment (vs two separate apps)
+> - Modern architecture with Server Components
+> - Lower hosting costs
+> 
+> The current React + Spring Boot implementation below is **stable and functional** but will be replaced.
+
+---
+
+## 📋 About This Version (Legacy - React + Spring Boot)
+
+
 A feature-complete e-commerce application built with React + Vite (frontend) and Spring Boot (backend). Features include JWT authentication, admin order management, shopping cart, wishlist, address management, dark mode theming, and automated email notifications.
 
 [![Java](https://img.shields.io/badge/Java-21-orange)]()
@@ -14,6 +42,16 @@ A feature-complete e-commerce application built with React + Vite (frontend) and
 
 ## 📋 Table of Contents
 
+### 🚧 Migration to Next.js
+- [Migration Plan](NEXTJS_MIGRATION_PLAN.md) - Complete strategy with diagrams
+- [Setup Guide](NEXTJS_SETUP_GUIDE.md) - Next.js project setup
+- [Prisma Schema](PRISMA_SCHEMA.md) - Database schema reference
+- [API Migration](API_MIGRATION_GUIDE.md) - Endpoint mapping
+- [Auth Setup](AUTH_SETUP_GUIDE.md) - NextAuth.js configuration
+- [Data Flow Diagrams](DATA_FLOW_DIAGRAMS.md) - Visual architecture
+- [Code Comparison](CODE_SIZE_COMPARISON.md) - Size analysis
+
+### 📖 Current Implementation (Legacy)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture--design)
 - [Features](#features)
@@ -28,7 +66,7 @@ A feature-complete e-commerce application built with React + Vite (frontend) and
 
 ---
 
-## 🚀 Tech Stack
+## 🚀 Tech Stack (Current - Legacy)
 
 ### Frontend
 - **React 18** with TypeScript
@@ -812,6 +850,70 @@ All project documentation is organized in the `/docs` folder:
 | **`/docs/analysis/`** | Technical analysis and guides |
 
 ### 📖 Key Documents
+
+**For current implementation:**
+- See `/docs` folder for detailed documentation
+
+**For Next.js migration:**
+- [Migration Plan](NEXTJS_MIGRATION_PLAN.md) - Complete strategy
+- [Setup Guide](NEXTJS_SETUP_GUIDE.md) - Implementation steps
+- [Code Comparison](CODE_SIZE_COMPARISON.md) - Detailed analysis
+
+---
+
+## 🚧 Migration Status
+
+### Current Phase: Planning & Documentation ✅
+
+**Completed:**
+- ✅ Architecture analysis and comparison
+- ✅ Database schema mapping (JPA → Prisma)
+- ✅ API endpoint mapping (Spring Boot → Next.js)
+- ✅ Authentication strategy (Spring Security → NextAuth.js)
+- ✅ Code size analysis (57% reduction projected)
+- ✅ Complete migration documentation
+
+**Next Steps:**
+1. Create Next.js project
+2. Set up Prisma with existing MySQL database
+3. Implement authentication (NextAuth.js)
+4. Migrate API routes
+5. Migrate frontend pages
+6. Testing and deployment
+
+**Timeline:**
+- **Phase 1:** Setup & Database (1 day)
+- **Phase 2:** Authentication (1-2 days)
+- **Phase 3:** API Routes (2-3 days)
+- **Phase 4:** Frontend Pages (2-3 days)
+- **Phase 5:** Components (1 day)
+- **Phase 6:** Styling (1 day)
+- **Phase 7:** Testing & Deployment (1 day)
+
+**Total Estimated Time:** 7-9 days
+
+### Why We're Migrating
+
+| Metric | Current | Next.js | Improvement |
+|--------|---------|---------|-------------|
+| **Lines of Code** | 10,983 | ~4,690 | **57% reduction** |
+| **Build Time** | ~3 min | ~30s | **90% faster** |
+| **Deployments** | 2 separate | 1 unified | **50% simpler** |
+| **Memory Usage** | 512MB+ | ~128MB | **75% less** |
+| **Hosting Cost** | $45-75/mo | $35-50/mo | **20-33% cheaper** |
+
+### Questions or Feedback?
+
+If you have questions about the migration or want to contribute:
+- 📧 Open an [issue](https://github.com/murasakijyuutann/vocaloidshop-fullstack/issues)
+- 📖 Read the [Migration Plan](NEXTJS_MIGRATION_PLAN.md)
+- 💬 Check the [Code Comparison](CODE_SIZE_COMPARISON.md) for detailed analysis
+
+---
+
+**Last Updated:** January 20, 2026  
+**Migration Status:** Planning Phase  
+**Next Milestone:** Phase 1 - Project Setup
 
 - **[Documentation Index](docs/README.md)** - Complete documentation guide
 - **[Project Overview](docs/architecture/01_PROJECT_OVERVIEW.md)** - High-level architecture
