@@ -31,7 +31,7 @@ export async function GET() {
     })
 
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    return NextResponse.json(user)
+    return NextResponse.json({ user })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 })
   }
@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(user)
+    return NextResponse.json({ user })
   } catch {
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 })
   }

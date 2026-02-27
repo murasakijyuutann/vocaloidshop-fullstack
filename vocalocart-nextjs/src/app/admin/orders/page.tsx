@@ -31,10 +31,10 @@ interface Order {
   id: number
   status: OrderStatus
   totalAmount: number
-  createdAt: string
+  orderedAt: string
   user: { name: string; email: string }
   shipRecipientName?: string | null
-  _count: { items: number }
+  orderItems: { id: number }[]
 }
 
 export default function AdminOrdersPage() {
@@ -134,9 +134,9 @@ export default function AdminOrdersPage() {
                     <p className="text-gray-500 text-xs">{order.user.email}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {new Date(order.orderedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{order._count.items}</td>
+                  <td className="px-4 py-3 text-gray-600">{order.orderItems.length}</td>
                   <td className="px-4 py-3 font-bold text-indigo-600">¥{order.totalAmount.toLocaleString()}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[order.status]}`}>

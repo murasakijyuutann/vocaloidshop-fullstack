@@ -35,7 +35,7 @@ export default function AddressesPage() {
   }, [status, router])
 
   const reload = () => {
-    fetch('/api/addresses').then(r => r.json()).then(d => setAddresses(d.addresses ?? [])).finally(() => setLoading(false))
+    fetch('/api/addresses').then(r => r.ok ? r.json() : null).then(d => setAddresses(d?.addresses ?? [])).finally(() => setLoading(false))
   }
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true) }

@@ -7,19 +7,21 @@ import Link from 'next/link'
 
 interface OrderItem {
   id: number
-  productName: string
   quantity: number
   price: number
-  imageUrl?: string | null
+  product: {
+    name: string
+    imageUrl?: string | null
+  }
 }
 
 interface Order {
   id: number
   status: string
   totalAmount: number
-  createdAt: string
+  orderedAt: string
   shipRecipientName?: string | null
-  items: OrderItem[]
+  orderItems: OrderItem[]
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -107,7 +109,7 @@ export default function OrdersPage() {
                     </span>
                   </div>
                   <p className="text-gray-500 text-sm mt-1">
-                    {new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date(order.orderedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     {order.shipRecipientName && ` · To: ${order.shipRecipientName}`}
                   </p>
                 </div>
@@ -121,13 +123,13 @@ export default function OrdersPage() {
               {expanded === order.id && (
                 <div className="border-t border-gray-100 p-4 sm:p-6">
                   <div className="divide-y divide-gray-100 mb-4">
-                    {order.items.map(item => (
+                    {order.orderItems.map(item => (
                       <div key={item.id} className="py-3 flex items-center gap-4">
                         <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl overflow-hidden shrink-0">
-                          {item.imageUrl ? <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover" /> : '🎵'}
+                          {item.product.imageUrl ? <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" /> : '🎵'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 text-sm">{item.productName}</p>
+                          <p className="font-semibold text-gray-800 text-sm">{item.product.name}</p>
                           <p className="text-gray-500 text-xs">¥{item.price.toLocaleString()} × {item.quantity}</p>
                         </div>
                         <p className="font-bold text-gray-800 text-sm">¥{(item.price * item.quantity).toLocaleString()}</p>

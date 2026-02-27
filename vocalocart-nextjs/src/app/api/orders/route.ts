@@ -26,7 +26,7 @@ export async function GET() {
       orderBy: { orderedAt: 'desc' },
     })
 
-    return NextResponse.json(orders)
+    return NextResponse.json({ orders })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 })
   }

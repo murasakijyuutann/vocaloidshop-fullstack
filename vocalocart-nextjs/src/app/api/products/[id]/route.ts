@@ -21,7 +21,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       include: { category: true },
     })
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-    return NextResponse.json(product)
+    return NextResponse.json({ product })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
   }
