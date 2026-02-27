@@ -1,0 +1,190 @@
+// Prisma schema for VocaloCart
+// Database: PostgreSQL (Neon / Supabase)
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+// Mirrors Spring Boot OrderStatus enum exactly — do not reorder
+enum OrderStatus {
+  PAYMENT_RECEIVED
+  PROCESSING
+  PREPARING
+  READY_FOR_DELIVERY
+  IN_DELIVERY
+  DELIVERED
+  CANCELED
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  name      String
+  phone     String?
+  birthday  DateTime?
+  isAdmin   Boolean   @default(false) @map("is_admin")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  orders        Order[]
+  cartItems     CartItem[]
+  addresses     Address[]
+  wishlistItems WishlistItem[]
+
+  @@map("user")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("category")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?  @db.Text
+  price       Int
+  stock       Int      @map("stock_quantity")
+  imageUrl    String?  @map("image_url")
+  categoryId  Int      @map("category_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  category      Category       @relation(fields: [categoryId], references: [id])
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  wishlistItems WishlistItem[]
+
+  @@map("product")
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  productId Int      @map("product_id")
+  quantity  Int
+  // Snapshot of product price at add-to-cart time so totals are stable
+  price     Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_item")
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  userId      Int         @map("user_id")
+  status      OrderStatus @default(PAYMENT_RECEIVED)
+  // Stored in the smallest currency unit (e.g. yen, or cents)
+  totalAmount Int         @map("total_amount")
+  orderedAt   DateTime    @default(now()) @map("ordered_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  // Shipping address is denormalized onto the order so that order history
+  // remains accurate even if the user later edits or deletes their address.
+  shipRecipientName String? @map("ship_recipient_name")
+  shipLine1         String? @map("ship_line1")
+  shipLine2         String? @map("ship_line2")
+  shipCity          String? @map("ship_city")
+  shipState         String? @map("ship_state")
+  shipPostalCode    String? @map("ship_postal_code")
+  shipCountry       String? @map("ship_country")
+  shipPhone         String? @map("ship_phone")
+
+  // Stripe & coupon tracking
+  stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
+  discountAmount        Int     @default(0) @map("discount_amount")
+  couponCode            String? @map("coupon_code")
+
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("order")
+}
+
+model OrderItem {
+  id        Int @id @default(autoincrement())
+  orderId   Int @map("order_id")
+  productId Int @map("product_id")
+  quantity  Int
+  // Snapshot of product price at order time
+  price     Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_item")
+}
+
+model Address {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  recipientName String   @map("recipient_name")
+  line1         String
+  line2         String?
+  city          String
+  state         String?
+  postalCode    String   @map("postal_code")
+  country       String
+  phone         String
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("address")
+}
+
+model WishlistItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  productId Int      @map("product_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_item")
+}
+
+model Coupon {
+  id             Int        @id @default(autoincrement())
+  code           String     @unique
+  type           CouponType
+  value          Int        // PERCENTAGE: 1-100, FIXED: amount off
+  minOrderAmount Int?       @map("min_order_amount")
+  maxUses        Int?       @map("max_uses")
+  usedCount      Int        @default(0) @map("used_count")
+  expiresAt      DateTime?  @map("expires_at")
+  active         Boolean    @default(true)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  @@map("coupon")
+}
