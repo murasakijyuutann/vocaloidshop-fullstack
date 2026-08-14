@@ -19,8 +19,7 @@ export function middleware(request: NextRequest) {
   // NextAuth v5 stores the session in one of these cookies
   const hasSession =
     request.cookies.has('__Secure-authjs.session-token') ||
-    request.cookies.has('authjs.session-token')
-
+    request.cookies.has('authjs.session-token') 
   if (!hasSession) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

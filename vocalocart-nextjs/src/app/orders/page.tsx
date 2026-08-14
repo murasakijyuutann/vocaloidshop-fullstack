@@ -52,14 +52,16 @@ export default function OrdersPage() {
   const [expanded, setExpanded] = useState<number | null>(null)
 
   useEffect(() => {
-    if (status === 'unauthenticated') router.push('/login')
-    if (status === 'authenticated') {
-      fetch('/api/orders')
-        .then(r => r.json())
-        .then(d => setOrders(d.orders ?? []))
-        .finally(() => setLoading(false))
-    }
-  }, [status, router])
+  if (status === 'loading') return
+  if (status === 'unauthenticated') router.push('/login')
+  if (status === 'authenticated') {
+    fetch('/api/orders')
+      .then(r => r.json())
+      .then(d => setOrders(d.orders ?? []))
+      .catch(() => setOrders([]))
+      .finally(() => setLoading(false))
+  }
+}, [status, router])
 
   const handleCancel = async (id: number) => {
     if (!confirm('Cancel this order?')) return

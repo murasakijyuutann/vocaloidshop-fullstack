@@ -20,12 +20,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased bg-gray-50 min-h-screen flex flex-col`}>
+      <body className={`${inter.className} antialiased bg-background text-foreground min-h-screen flex flex-col`}>
         <Providers>
           <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
-          <Toaster richColors position="top-right" />
+          <Toaster theme="dark" richColors position="top-right" />
         </Providers>
       </body>
     </html>

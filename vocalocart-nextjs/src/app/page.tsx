@@ -1,29 +1,35 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { toast } from 'sonner'
-
-interface Product {
-  id: number
-  name: string
-  price: number
-  imageUrl?: string | null
-  stock: number
-  category?: { name: string } | null
-}
+import { Heart, Search, ChevronLeft, ChevronRight, PackageSearch } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ProductCard, type ProductCardProduct } from '@/components/ProductCard'
+import { EmptyState } from '@/components/EmptyState'
 
 interface Category {
   id: number
   name: string
 }
 
+const SIZE = 12
+const ALL_CATEGORIES = 'all'
+
 export default function HomePage() {
   const { data: session } = useSession()
   const addItem = useCart(s => s.addItem)
 
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<ProductCardProduct[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [q, setQ] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -32,7 +38,6 @@ export default function HomePage() {
   const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [loading, setLoading] = useState(true)
-  const SIZE = 12
 
   useEffect(() => {
     fetch('/api/categories').then(r => r.json()).then(d => setCategories(d.categories ?? []))
@@ -59,7 +64,7 @@ export default function HomePage() {
     if (!session) { toast.info('Please log in to add items to cart'); return }
     try {
       await addItem(productId)
-      toast.success('Added to cart! 🛒')
+      toast.success('Added to cart')
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
     }
@@ -73,125 +78,136 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId }),
       })
-      if (res.ok) toast.success('Added to wishlist! ❤️')
+      if (res.ok) toast.success('Added to wishlist')
       else toast.info('Already in wishlist')
     } catch { toast.error('Failed to update wishlist') }
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      {/* Hero */}
-      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white text-center py-12 px-6 mb-8 shadow-lg">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-2">🎵 VocaloCart</h1>
-        <p className="text-white/90 text-lg">Your ultimate destination for Vocaloid merchandise</p>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6 mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <input
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 bg-gray-50 transition-colors"
-          placeholder="🔍 Search products..."
-          value={q}
-          onChange={e => { setQ(e.target.value); setPage(0) }}
-        />
-        <select
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
-          value={categoryId}
-          onChange={e => { setCategoryId(e.target.value); setPage(0) }}
-        >
-          <option value="">All Categories</option>
-          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-        <select
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
-          value={sort}
-          onChange={e => { setSort(e.target.value); setPage(0) }}
-        >
-          <option value="name">Sort: Name</option>
-          <option value="price">Sort: Price</option>
-          <option value="createdAt">Sort: Newest</option>
-        </select>
-        <select
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
-          value={dir}
-          onChange={e => { setDir(e.target.value); setPage(0) }}
-        >
-          <option value="asc">↑ Ascending</option>
-          <option value="desc">↓ Descending</option>
-        </select>
-      </div>
-
-      {/* Product grid */}
-      {loading ? (
-        <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
-      ) : products.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md text-center py-16 px-6">
-          <p className="text-5xl mb-4">😢</p>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No products found</h2>
-          <p className="text-gray-500">Try adjusting your search or filters</p>
+    <div className="page-enter">
+      {/* Hero — full-bleed, shares the page background, separated by a hairline */}
+      <section className="border-b border-border bg-surface">
+        <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 sm:py-20">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            VocaloCart
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-muted-foreground">
+            Your destination for Vocaloid merchandise
+          </p>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-            {products.map(p => (
-              <div key={p.id} className="bg-white rounded-2xl shadow-md overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-xl transition-all duration-300">
-                {/* Image */}
-                <div className="relative h-48 sm:h-56 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-5xl">
-                  {p.imageUrl
-                    ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                    : '🎵'}
-                  <button
-                    onClick={() => handleWishlist(p.id)}
-                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 flex items-center justify-center text-lg shadow-md hover:scale-110 transition-transform"
-                    title="Add to wishlist"
-                  >❤️</button>
-                </div>
-                {/* Info */}
-                <div className="p-4 flex flex-col flex-1">
-                  {p.category && (
-                    <span className="inline-block mb-2 px-2.5 py-0.5 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full">
-                      {p.category.name}
-                    </span>
-                  )}
-                  <Link href={`/product/${p.id}`} className="font-semibold text-gray-800 hover:text-indigo-600 transition-colors line-clamp-2 mb-2 text-sm sm:text-base">
-                    {p.name}
-                  </Link>
-                  <p className="text-indigo-600 font-bold text-xl mb-3 mt-auto">¥{p.price.toLocaleString()}</p>
-                  <button
-                    onClick={() => handleAddToCart(p.id)}
-                    disabled={p.stock === 0}
-                    className="w-full py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-sm"
-                  >
-                    {p.stock === 0 ? 'Out of Stock' : '🛒 Add to Cart'}
-                  </button>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        {/* Filters */}
+        <div className="mb-8 grid grid-cols-1 gap-3 border-b border-border pb-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              placeholder="Search products..."
+              value={q}
+              onChange={e => { setQ(e.target.value); setPage(0) }}
+            />
+          </div>
+
+          <Select
+            value={categoryId || ALL_CATEGORIES}
+            onValueChange={v => { setCategoryId(v === ALL_CATEGORIES ? '' : v); setPage(0) }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="All categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+              {categories.map(c => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sort} onValueChange={v => { setSort(v); setPage(0) }}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Sort: Name</SelectItem>
+              <SelectItem value="price">Sort: Price</SelectItem>
+              <SelectItem value="createdAt">Sort: Newest</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={dir} onValueChange={v => { setDir(v); setPage(0) }}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Ascending</SelectItem>
+              <SelectItem value="desc">Descending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Product grid */}
+        {loading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+            {Array.from({ length: SIZE }).map((_, i) => (
+              <div key={i} className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface">
+                <Skeleton className="aspect-square w-full rounded-none" />
+                <div className="flex flex-col gap-2 p-4">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-9 w-full" />
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white rounded-2xl shadow-md flex items-center justify-center gap-4 p-4">
-              <button
-                disabled={page === 0}
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-md transition-all"
-              >
-                ← Previous
-              </button>
-              <span className="font-semibold text-gray-700">Page {page + 1} of {totalPages}</span>
-              <button
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage(p => p + 1)}
-                className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-md transition-all"
-              >
-                Next →
-              </button>
+        ) : products.length === 0 ? (
+          <EmptyState
+            icon={PackageSearch}
+            title="No products found"
+            description="Try adjusting your search or filters."
+          />
+        ) : (
+          <>
+            <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+              {products.map(p => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onAddToCart={handleAddToCart}
+                  cornerAction={{ icon: Heart, label: 'Add to wishlist', onClick: handleWishlist }}
+                />
+              ))}
             </div>
-          )}
-        </>
-      )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4">
+                <Button
+                  variant="outline"
+                  disabled={page === 0}
+                  onClick={() => setPage(p => Math.max(0, p - 1))}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm font-medium text-muted-foreground">
+                  Page {page + 1} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(p => p + 1)}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
-

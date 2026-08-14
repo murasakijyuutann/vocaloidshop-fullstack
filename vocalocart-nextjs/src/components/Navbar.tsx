@@ -4,6 +4,26 @@ import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import {
+  Home,
+  Heart,
+  Mail,
+  ShoppingCart,
+  Package,
+  User,
+  Settings,
+  Store,
+  Menu,
+  X,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+const navLinks = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/wishlist', label: 'Wishlist', icon: Heart },
+  { href: '/contact', label: 'Contact', icon: Mail },
+]
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -21,105 +41,157 @@ export default function Navbar() {
   }, [pathname])
 
   const cartCount = totalItems()
+  const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href))
+
+  const navLinkClass = (href: string) =>
+    cn(
+      'inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+      isActive(href)
+        ? 'text-secondary'
+        : 'text-muted-foreground hover:bg-surface hover:text-foreground'
+    )
+
+  const mobileLinkClass = (href: string) =>
+    cn(
+      'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
+      isActive(href) ? 'text-secondary' : 'text-foreground hover:bg-surface'
+    )
 
   return (
-    <nav className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        {/* Logo */}
-        <Link href="/" className="text-white font-bold text-xl flex items-center gap-2 hover:scale-105 transition-transform">
-          🎵 VocaloCart
+    <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+        <Link href="/" className="text-lg font-bold tracking-tight text-foreground">
+          VocaloCart
         </Link>
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1">
-          <Link href="/" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">
-            🏠 Home
-          </Link>
-          <Link href="/wishlist" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">
-            ❤️ Wishlist
-          </Link>
-          <Link href="/contact" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">
-            📬 Contact
-          </Link>
+        <div className="hidden md:flex md:items-center md:gap-1">
+          {navLinks.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className={navLinkClass(href)}>
+              <Icon className="h-4 w-4" strokeWidth={2} />
+              {label}
+            </Link>
+          ))}
 
           {session ? (
             <>
-              <Link href="/cart" className="relative text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors flex items-center gap-1">
-                🛒 Cart
+              <Link href="/cart" className={cn(navLinkClass('/cart'), 'relative')}>
+                <ShoppingCart className="h-4 w-4" strokeWidth={2} />
+                Cart
                 {cartCount > 0 && (
-                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center animate-pulse">
+                  <span className="absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                     {cartCount}
                   </span>
                 )}
               </Link>
-              <Link href="/orders" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">
-                📦 Orders
+              <Link href="/orders" className={navLinkClass('/orders')}>
+                <Package className="h-4 w-4" strokeWidth={2} />
+                Orders
               </Link>
-              <Link href="/my" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">
-                👤 {session.user?.name?.split(' ')[0]}
+              <Link href="/my" className={navLinkClass('/my')}>
+                <User className="h-4 w-4" strokeWidth={2} />
+                {session.user?.name?.split(' ')[0]}
+              </Link>
+
+              {session.user?.isAdmin && (
+                <div className="ml-1 flex items-center gap-1 border-l border-border pl-2">
+                  <Link href="/admin/orders" className={navLinkClass('/admin/orders')}>
+                    <Settings className="h-4 w-4" strokeWidth={2} />
+                    Orders
+                  </Link>
+                  <Link href="/admin/products" className={navLinkClass('/admin/products')}>
+                    <Store className="h-4 w-4" strokeWidth={2} />
+                    Products
+                  </Link>
+                </div>
+              )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-2"
+                onClick={() => signOut({ callbackUrl: '/' })}
+              >
+                Sign out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" className="ml-2" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/register">Register</Link>
+              </Button>
+            </>
+          )}
+        </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setMenuOpen(v => !v)}
+          aria-label="Toggle menu"
+        >
+          {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </Button>
+      </div>
+
+      {menuOpen && (
+        <div className="divide-y divide-border border-t border-border md:hidden">
+          {navLinks.map(({ href, label, icon: Icon }) => (
+            <Link key={href} href={href} className={mobileLinkClass(href)}>
+              <Icon className="h-4 w-4" strokeWidth={2} />
+              {label}
+            </Link>
+          ))}
+
+          {session ? (
+            <>
+              <Link href="/cart" className={mobileLinkClass('/cart')}>
+                <ShoppingCart className="h-4 w-4" strokeWidth={2} />
+                Cart
+                {cartCount > 0 && (
+                  <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              <Link href="/orders" className={mobileLinkClass('/orders')}>
+                <Package className="h-4 w-4" strokeWidth={2} />
+                Orders
+              </Link>
+              <Link href="/my" className={mobileLinkClass('/my')}>
+                <User className="h-4 w-4" strokeWidth={2} />
+                My Page
               </Link>
               {session.user?.isAdmin && (
                 <>
-                  <Link href="/admin/orders" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">⚙️ Orders</Link>
-                  <Link href="/admin/products" className="text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/20 transition-colors">🛍️ Products</Link>
+                  <Link href="/admin/orders" className={mobileLinkClass('/admin/orders')}>
+                    <Settings className="h-4 w-4" strokeWidth={2} />
+                    Admin · Orders
+                  </Link>
+                  <Link href="/admin/products" className={mobileLinkClass('/admin/products')}>
+                    <Store className="h-4 w-4" strokeWidth={2} />
+                    Admin · Products
+                  </Link>
                 </>
               )}
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className="ml-2 px-4 py-2 bg-white/20 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/30 transition-all"
+                className="flex w-full items-center px-4 py-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
               >
                 Sign out
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="px-4 py-2 bg-white/20 border-2 border-white/30 text-white font-semibold rounded-xl hover:bg-white/30 transition-all">
+              <Link href="/login" className={mobileLinkClass('/login')}>
                 Login
               </Link>
-              <Link href="/register" className="ml-1 px-4 py-2 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-gray-100 transition-all">
+              <Link href="/register" className={mobileLinkClass('/register')}>
                 Register
               </Link>
-            </>
-          )}
-        </div>
-
-        {/* Mobile menu button */}
-        <button
-          className="md:hidden w-10 h-10 flex items-center justify-center bg-white/20 rounded-xl text-white text-xl hover:bg-white/30 transition-colors"
-          onClick={() => setMenuOpen(v => !v)}
-          aria-label="Toggle menu"
-        >
-          {menuOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
-      {/* Mobile dropdown */}
-      {menuOpen && (
-        <div className="md:hidden bg-gradient-to-b from-indigo-600 to-purple-700 border-t border-white/10 px-4 py-3 flex flex-col gap-1">
-          <Link href="/" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">🏠 Home</Link>
-          <Link href="/wishlist" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">❤️ Wishlist</Link>
-          <Link href="/contact" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">📬 Contact</Link>
-          {session ? (
-            <>
-              <Link href="/cart" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20 flex items-center gap-2">
-                🛒 Cart {cartCount > 0 && <span className="bg-red-500 text-xs px-2 py-0.5 rounded-full">{cartCount}</span>}
-              </Link>
-              <Link href="/orders" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">📦 Orders</Link>
-              <Link href="/my" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">👤 My Page</Link>
-              {session.user?.isAdmin && (
-                <>
-                  <Link href="/admin/orders" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">⚙️ Orders</Link>
-                  <Link href="/admin/products" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">🛍️ Products</Link>
-                </>
-              )}
-              <button onClick={() => signOut({ callbackUrl: '/' })} className="text-left text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">
-                Sign out
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">Login</Link>
-              <Link href="/register" className="text-white font-semibold px-4 py-3 rounded-xl hover:bg-white/20">Register</Link>
             </>
           )}
         </div>
