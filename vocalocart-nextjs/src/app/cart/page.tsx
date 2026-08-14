@@ -5,9 +5,16 @@ import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { ArrowLeft, ArrowRight, ShoppingCart, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/PageHeader'
+import { PriceTag } from '@/components/PriceTag'
+import { QuantityStepper } from '@/components/QuantityStepper'
+import { EmptyState } from '@/components/EmptyState'
 
 export default function CartPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const { items, loading, fetchCart, updateQuantity, removeItem, clearCart, totalItems, totalPrice } = useCart()
   const [fetched, setFetched] = useState(false)
@@ -16,10 +23,6 @@ export default function CartPage() {
     if (status === 'unauthenticated') router.push('/login')
     if (status === 'authenticated') fetchCart().finally(() => setFetched(true))
   }, [status])
-
-  if (status === 'loading' || loading || !fetched) {
-    return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
-  }
 
   const handleClear = async () => {
     await clearCart()
@@ -31,83 +34,122 @@ export default function CartPage() {
     toast.success('Item removed')
   }
 
+  if (status === 'loading' || loading || !fetched) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-8 h-9 w-48" />
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+          <div className="space-y-4 rounded-lg border border-border bg-surface p-4 sm:p-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <Skeleton className="h-24 w-24 shrink-0 rounded-md" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <Skeleton className="h-72 w-full rounded-lg" />
+        </div>
+      </div>
+    )
+  }
+
   const subtotal = totalPrice()
   const shipping = subtotal > 0 ? (subtotal >= 5000 ? 0 : 500) : 0
   const total = subtotal + shipping
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 flex items-center gap-3">
-          🛒 Your Cart
-          <span className="text-xl font-normal text-gray-500">({totalItems()} items)</span>
-        </h1>
-        <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 border-2 border-indigo-500 text-indigo-600 font-semibold rounded-xl hover:bg-indigo-500 hover:text-white transition-all">
-          ← Continue Shopping
-        </Link>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader
+        title="Your Cart"
+        description={`${totalItems()} item${totalItems() === 1 ? '' : 's'}`}
+        actions={
+          <Button variant="outline" asChild>
+            <Link href="/">
+              <ArrowLeft className="h-4 w-4" />
+              Continue shopping
+            </Link>
+          </Button>
+        }
+      />
 
       {items.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md text-center py-20 px-6">
-          <p className="text-6xl mb-4">🛒</p>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Your cart is empty</h2>
-          <p className="text-gray-500 mb-6">Add some Vocaloid merch to get started!</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            Shop Now
-          </Link>
-        </div>
+        <EmptyState
+          icon={ShoppingCart}
+          title="Your cart is empty"
+          description="Add some Vocaloid merch to get started."
+          action={
+            <Button asChild>
+              <Link href="/">Shop now</Link>
+            </Button>
+          }
+        />
       ) : (
-        <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-start">
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_380px]">
           {/* Items */}
-          <div className="bg-white rounded-2xl shadow-md p-4 sm:p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-gray-800">Items</h2>
-              <button onClick={handleClear} className="text-red-500 text-sm font-semibold hover:text-red-700 transition-colors">
-                🗑️ Clear all
-              </button>
+          <div className="rounded-lg border border-border bg-surface p-4 sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-semibold text-foreground">Items</h2>
+              <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground hover:text-destructive">
+                <Trash2 className="h-4 w-4" />
+                Clear all
+              </Button>
             </div>
 
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-border">
               {items.map(item => (
-                <div key={item.id} className="py-4 grid grid-cols-[80px_1fr] sm:grid-cols-[100px_1fr_auto] gap-4 items-center">
-                  {/* Image */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-3xl overflow-hidden shrink-0">
-                    {item.imageUrl
-                      ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      : '🎵'}
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[80px_1fr] items-center gap-4 py-4 sm:grid-cols-[96px_1fr_auto]"
+                >
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted sm:h-24 sm:w-24">
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <span className="text-lg font-bold tracking-tight text-muted-foreground/40">
+                          VC
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Info */}
-                  <div className="flex flex-col gap-1">
-                    <Link href={`/product/${item.productId}`} className="font-semibold text-gray-800 hover:text-indigo-600 transition-colors text-sm sm:text-base">
+                  <div className="flex flex-col gap-1.5">
+                    <Link
+                      href={`/product/${item.productId}`}
+                      className="text-sm font-medium text-foreground transition-colors hover:text-secondary sm:text-base"
+                    >
                       {item.name}
                     </Link>
-                    <p className="text-indigo-600 font-semibold">¥{item.price.toLocaleString()}</p>
-                    {/* Quantity controls */}
-                    <div className="flex items-center gap-3 mt-1">
-                      <div className="flex items-center border-2 border-gray-200 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                          className="w-8 h-8 flex items-center justify-center bg-gray-50 text-indigo-600 font-bold hover:bg-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
-                        >−</button>
-                        <span className="w-10 text-center font-semibold text-gray-800 text-sm">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          disabled={item.quantity >= item.stock}
-                          className="w-8 h-8 flex items-center justify-center bg-gray-50 text-indigo-600 font-bold hover:bg-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
-                        >+</button>
-                      </div>
-                      <button onClick={() => handleRemove(item.id)} className="text-red-400 hover:text-red-600 text-sm font-semibold transition-colors">
-                        🗑️ Remove
-                      </button>
+                    <PriceTag value={item.price} size="sm" />
+                    <div className="mt-1 flex items-center gap-3">
+                      <QuantityStepper
+                        value={item.quantity}
+                        max={item.stock}
+                        onChange={q => updateQuantity(item.id, q)}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemove(item.id)}
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remove
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Subtotal (desktop) */}
-                  <div className="hidden sm:block text-right font-bold text-gray-800 text-lg">
-                    ¥{(item.price * item.quantity).toLocaleString()}
+                  <div className="hidden text-right sm:block">
+                    <PriceTag value={item.price * item.quantity} />
                   </div>
                 </div>
               ))}
@@ -115,31 +157,31 @@ export default function CartPage() {
           </div>
 
           {/* Summary */}
-          <div className="bg-white rounded-2xl shadow-md p-6 sticky top-20">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">Order Summary</h2>
+          <div className="sticky top-24 rounded-lg border border-border bg-surface p-6">
+            <h2 className="mb-4 border-b border-border pb-4 text-lg font-bold text-foreground">
+              Order Summary
+            </h2>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal ({totalItems()} items)</span>
                 <span>¥{subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? <span className="text-green-600 font-semibold">FREE</span> : `¥${shipping.toLocaleString()}`}</span>
+                <span>{shipping === 0 ? 'Free' : `¥${shipping.toLocaleString()}`}</span>
               </div>
               {shipping > 0 && (
-                <p className="text-xs text-gray-400">Free shipping on orders ¥5,000+</p>
+                <p className="text-xs text-muted-foreground/70">Free shipping on orders ¥5,000+</p>
               )}
             </div>
-            <div className="flex justify-between font-bold text-xl text-gray-800 mt-4 pt-4 border-t-2 border-gray-200">
-              <span>Total</span>
-              <span>¥{total.toLocaleString()}</span>
+            <div className="mt-4 flex justify-between border-t border-border pt-4">
+              <span className="font-semibold text-foreground">Total</span>
+              <PriceTag value={total} size="lg" />
             </div>
-            <button
-              onClick={() => router.push('/checkout')}
-              className="w-full mt-5 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-            >
-              🚀 Proceed to Checkout
-            </button>
+            <Button size="lg" className="mt-5 w-full" onClick={() => router.push('/checkout')}>
+              Proceed to checkout
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       )}

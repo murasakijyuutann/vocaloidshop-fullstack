@@ -5,6 +5,13 @@ import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ArrowLeft, CheckCircle2, XCircle, Heart, ShoppingCart, Loader2, PackageX } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PriceTag } from '@/components/PriceTag'
+import { QuantityStepper } from '@/components/QuantityStepper'
+import { EmptyState } from '@/components/EmptyState'
 
 interface Product {
   id: number
@@ -40,7 +47,7 @@ export default function ProductDetailPage() {
     setAdding(true)
     try {
       await addItem(Number(id), qty)
-      toast.success(`Added ${qty}× to cart! 🛒`)
+      toast.success(`Added ${qty}× to cart`)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
     } finally {
@@ -55,95 +62,147 @@ export default function ProductDetailPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId: Number(id) }),
     })
-    if (res.ok) toast.success('Added to wishlist! ❤️')
+    if (res.ok) toast.success('Added to wishlist')
     else toast.info('Already in wishlist')
   }
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-6 h-5 w-28" />
+        <div className="grid overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-2">
+          <Skeleton className="aspect-square w-full rounded-none md:aspect-auto md:h-full" />
+          <div className="flex flex-col gap-4 p-6 sm:p-8">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="mt-auto h-12 w-full" />
+          </div>
+        </div>
+      </div>
     )
   }
 
   if (!product) {
     return (
-      <div className="max-w-lg mx-auto text-center py-20 page-enter">
-        <p className="text-6xl mb-4">😢</p>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Product not found</h2>
-        <Link href="/" className="text-indigo-600 font-semibold hover:text-purple-600">← Back to shop</Link>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
+        <EmptyState
+          icon={PackageX}
+          title="Product not found"
+          description="It may have been removed or the link is incorrect."
+          action={
+            <Button asChild variant="outline">
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4" />
+                Back to shop
+              </Link>
+            </Button>
+          }
+        />
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      <Link href="/" className="inline-flex items-center gap-2 text-indigo-600 font-semibold hover:text-purple-600 transition-colors mb-6">
-        ← Back to shop
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
+      <Link
+        href="/"
+        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+        Back to shop
       </Link>
 
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden grid md:grid-cols-2 gap-0">
+      <div className="grid overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-2">
         {/* Image */}
-        <div className="h-72 md:h-auto bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-8xl min-h-64">
-          {product.imageUrl
-            ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
-            : '🎵'}
+        <div className="relative aspect-square bg-muted md:aspect-auto">
+          {product.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.imageUrl}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="flex h-full min-h-64 w-full items-center justify-center">
+              <span className="text-4xl font-bold tracking-tight text-muted-foreground/40">
+                VC
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Info */}
-        <div className="p-6 sm:p-8 flex flex-col">
+        <div className="flex flex-col p-6 sm:p-8">
           {product.category && (
-            <span className="inline-block mb-3 px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full w-fit">
+            <Badge variant="outline" className="mb-3 w-fit text-muted-foreground">
               {product.category.name}
-            </span>
+            </Badge>
           )}
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">{product.name}</h1>
-          <p className="text-4xl font-bold text-indigo-600 mb-4">¥{product.price.toLocaleString()}</p>
+
+          <h1 className="mb-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            {product.name}
+          </h1>
+
+          <PriceTag value={product.price} size="lg" className="mb-4" />
 
           {product.description && (
-            <p className="text-gray-600 leading-relaxed mb-6">{product.description}</p>
+            <p className="mb-6 leading-relaxed text-muted-foreground">{product.description}</p>
           )}
 
-          <div className="mb-6">
+          <div className="mb-6 flex items-center gap-2 text-sm font-medium">
             {product.stock > 0 ? (
-              <span className="text-green-600 font-semibold text-sm">✅ In stock ({product.stock} available)</span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+                In stock ({product.stock} available)
+              </span>
             ) : (
-              <span className="text-red-500 font-semibold text-sm">❌ Out of stock</span>
+              <span className="flex items-center gap-1.5 text-destructive">
+                <XCircle className="h-4 w-4" strokeWidth={2} />
+                Out of stock
+              </span>
             )}
           </div>
 
-          {/* Quantity */}
           {product.stock > 0 && (
-            <div className="flex items-center gap-3 mb-6">
-              <span className="font-semibold text-gray-700 text-sm">Qty:</span>
-              <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setQty(q => Math.max(1, q - 1))}
-                  disabled={qty <= 1}
-                  className="w-10 h-10 flex items-center justify-center bg-gray-50 text-indigo-600 font-bold hover:bg-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                >−</button>
-                <span className="w-12 text-center font-semibold text-gray-800">{qty}</span>
-                <button
-                  onClick={() => setQty(q => Math.min(product.stock, q + 1))}
-                  disabled={qty >= product.stock}
-                  className="w-10 h-10 flex items-center justify-center bg-gray-50 text-indigo-600 font-bold hover:bg-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                >+</button>
-              </div>
+            <div className="mb-6 flex items-center gap-3">
+              <span className="text-sm font-medium text-muted-foreground">Qty</span>
+              <QuantityStepper value={qty} max={product.stock} onChange={setQty} />
             </div>
           )}
 
-          <div className="flex gap-3 mt-auto">
-            <button
+          <div className="mt-auto flex gap-3">
+            <Button
+              size="lg"
+              className="flex-1"
               onClick={handleAddToCart}
               disabled={product.stock === 0 || adding}
-              className="flex-1 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {adding ? '⏳ Adding…' : product.stock === 0 ? 'Out of Stock' : '🛒 Add to Cart'}
-            </button>
-            <button
+              {adding ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                  Adding…
+                </>
+              ) : product.stock === 0 ? (
+                'Out of stock'
+              ) : (
+                <>
+                  <ShoppingCart className="h-4 w-4" strokeWidth={2} />
+                  Add to cart
+                </>
+              )}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
               onClick={handleWishlist}
-              className="w-14 h-14 flex items-center justify-center border-2 border-gray-200 rounded-xl text-xl hover:border-red-400 hover:bg-red-50 transition-colors"
+              aria-label="Add to wishlist"
               title="Add to wishlist"
-            >❤️</button>
+            >
+              <Heart className="h-4 w-4" strokeWidth={2} />
+            </Button>
           </div>
         </div>
       </div>

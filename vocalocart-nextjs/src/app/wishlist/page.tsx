@@ -56,7 +56,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 page-enter">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
       <h1 className="mb-8 flex items-center gap-2 text-3xl font-bold tracking-tight text-foreground">
         <Heart className="h-7 w-7" strokeWidth={2} />
         My Wishlist
