@@ -1,16 +1,40 @@
 'use client'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { User, Mail, MessageSquare, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/PageHeader'
+import { cn } from '@/lib/utils'
+
+const EMPTY = { name: '', email: '', subject: '', message: '' }
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
+  const [form, setForm] = useState(EMPTY)
+  const [errors, setErrors] = useState<Record<string, string>>({})
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
 
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k: keyof typeof EMPTY, v: string) => {
+    setForm(f => ({ ...f, [k]: v }))
+    setErrors(e => { const n = { ...e }; delete n[k]; return n })
+  }
+
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!form.name.trim()) e.name = 'Name is required'
+    if (!form.email) e.email = 'Email is required'
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
+    if (!form.subject.trim()) e.subject = 'Subject is required'
+    if (form.message.trim().length < 10) e.message = 'Message must be at least 10 characters'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   const handleSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault()
+    if (!validate()) return
     setSending(true)
     try {
       const res = await fetch('/api/contact', {
@@ -20,7 +44,7 @@ export default function ContactPage() {
       })
       if (res.ok) {
         setSent(true)
-        toast.success('Message sent! We\'ll be in touch soon 📬')
+        toast.success("Message sent — we'll be in touch soon")
       } else {
         const d = await res.json()
         toast.error(d.error ?? 'Failed to send message')
@@ -31,95 +55,114 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white text-center py-10 px-6 mb-8 shadow-lg">
-        <div className="text-5xl mb-3">📬</div>
-        <h1 className="text-3xl font-bold mb-2">Contact Us</h1>
-        <p className="text-white/90">We'd love to hear from you! Send us a message and we'll respond within 24 hours.</p>
-      </div>
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader
+        title="Contact Us"
+        description="We'd love to hear from you — send a message and we'll respond within 24 hours."
+      />
 
       {sent ? (
-        <div className="bg-white rounded-2xl shadow-md text-center py-16 px-6">
-          <div className="text-6xl mb-4">✅</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Message Sent!</h2>
-          <p className="text-gray-500 mb-6">Thank you for reaching out. We'll get back to you soon.</p>
-          <button
-            onClick={() => { setSent(false); setForm({ name: '', email: '', subject: '', message: '' }) }}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all"
+        <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-surface px-6 py-16 text-center">
+          <CheckCircle2 className="h-8 w-8 text-primary" strokeWidth={1.5} />
+          <h2 className="text-lg font-bold text-foreground">Message sent</h2>
+          <p className="max-w-sm text-sm text-muted-foreground">Thank you for reaching out. We&apos;ll get back to you soon.</p>
+          <Button
+            variant="outline"
+            className="mt-3"
+            onClick={() => { setSent(false); setForm(EMPTY) }}
           >
-            Send Another Message
-          </button>
+            Send another message
+          </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+        <div className="rounded-lg border border-border bg-surface p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Your Name</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Your Name</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">👤</span>
-                  <input
+                  <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+                  <Input
                     type="text"
                     value={form.name}
                     onChange={e => set('name', e.target.value)}
-                    required
                     placeholder="Hatsune Miku"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
+                    className={cn('pl-9', errors.name && 'border-destructive')}
                   />
                 </div>
+                {errors.name && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                    <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                    {errors.name}
+                  </p>
+                )}
               </div>
+
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">Email Address</label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">📧</span>
-                  <input
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+                  <Input
                     type="email"
                     value={form.email}
                     onChange={e => set('email', e.target.value)}
-                    required
                     placeholder="miku@vocaloid.jp"
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
+                    className={cn('pl-9', errors.email && 'border-destructive')}
                   />
                 </div>
+                {errors.email && (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                    <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                    {errors.email}
+                  </p>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Subject</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Subject</label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">📝</span>
-                <input
+                <MessageSquare className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+                <Input
                   type="text"
                   value={form.subject}
                   onChange={e => set('subject', e.target.value)}
-                  required
                   placeholder="Order inquiry, feedback, or anything else"
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
+                  className={cn('pl-9', errors.subject && 'border-destructive')}
                 />
               </div>
+              {errors.subject && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                  <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                  {errors.subject}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Message</label>
-              <textarea
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Message</label>
+              <Textarea
                 value={form.message}
                 onChange={e => set('message', e.target.value)}
-                required
                 rows={6}
                 placeholder="Tell us how we can help you…"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors resize-none"
+                className={cn('resize-none', errors.message && 'border-destructive')}
               />
-              <p className="text-xs text-gray-400 mt-1 text-right">{form.message.length} characters</p>
+              <div className="mt-1 flex items-center justify-between">
+                {errors.message ? (
+                  <p className="flex items-center gap-1 text-xs text-destructive">
+                    <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                    {errors.message}
+                  </p>
+                ) : <span />}
+                <p className="text-xs text-muted-foreground">{form.message.length} characters</p>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-base flex items-center justify-center gap-2"
-            >
-              {sending ? '⏳ Sending…' : '🚀 Send Message'}
-            </button>
+            <Button type="submit" disabled={sending} className="w-full">
+              {sending && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
+              {sending ? 'Sending…' : 'Send Message'}
+            </Button>
           </form>
         </div>
       )}
