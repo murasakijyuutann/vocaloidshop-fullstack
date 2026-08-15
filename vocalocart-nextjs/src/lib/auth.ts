@@ -45,7 +45,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.isAdmin = (user as any).isAdmin
+        token.isAdmin = user.isAdmin
       }
       return token
     },

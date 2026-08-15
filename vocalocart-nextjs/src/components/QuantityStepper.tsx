@@ -13,6 +13,8 @@ interface QuantityStepperProps {
 export function QuantityStepper({ value, min = 1, max, onChange, className }: QuantityStepperProps) {
   return (
     <div
+      role="group"
+      aria-label="Quantity"
       className={cn(
         'inline-flex items-center overflow-hidden rounded-md border border-input',
         className
@@ -27,7 +29,7 @@ export function QuantityStepper({ value, min = 1, max, onChange, className }: Qu
       >
         <Minus className="h-4 w-4" strokeWidth={2} />
       </button>
-      <span className="w-10 text-center text-sm font-medium text-foreground">{value}</span>
+      <span aria-live="polite" aria-atomic="true" className="w-10 text-center text-sm font-medium text-foreground">{value}</span>
       <button
         type="button"
         onClick={() => onChange(max !== undefined ? Math.min(max, value + 1) : value + 1)}

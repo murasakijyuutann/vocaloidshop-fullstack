@@ -32,6 +32,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { PriceTag } from '@/components/PriceTag'
 import { cn } from '@/lib/utils'
 import { resolveCssColor } from '@/lib/resolve-css-color'
+import { calculateShipping } from '@/lib/pricing'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -158,7 +159,7 @@ export default function CheckoutPage() {
   }
 
   const subtotal = totalPrice()
-  const shipping = subtotal >= 5000 ? 0 : 500
+  const shipping = calculateShipping(subtotal)
   const total = Math.max(0, subtotal + shipping - discount)
 
   const handleApplyCoupon = async () => {
@@ -225,11 +226,11 @@ export default function CheckoutPage() {
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left column */}
         <div className="space-y-6">
-          <div className="rounded-lg border border-border bg-surface p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+          <fieldset className="rounded-lg border border-border bg-surface p-6">
+            <legend className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <MapPin className="h-4 w-4" strokeWidth={2} />
               Shipping address
-            </h2>
+            </legend>
             {addresses.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="mb-4 text-sm text-muted-foreground">
@@ -278,7 +279,7 @@ export default function CheckoutPage() {
                 </Button>
               </div>
             )}
-          </div>
+          </fieldset>
 
           <div className="rounded-lg border border-border bg-surface p-6">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
@@ -356,11 +357,15 @@ export default function CheckoutPage() {
                 </div>
               ) : (
                 <div className="flex gap-2">
+                  <label htmlFor="coupon-code-input" className="sr-only">Coupon code</label>
                   <Input
+                    id="coupon-code-input"
                     placeholder="Enter code"
                     value={couponInput}
                     onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
                     onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                    aria-invalid={!!couponError}
+                    aria-describedby={couponError ? 'coupon-code-error' : undefined}
                   />
                   <Button
                     variant="outline"
@@ -372,7 +377,7 @@ export default function CheckoutPage() {
                 </div>
               )}
               {couponError && (
-                <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-destructive">
+                <p id="coupon-code-error" role="alert" className="mt-2 flex items-center gap-1.5 text-xs font-medium text-destructive">
                   <XCircle className="h-3.5 w-3.5" strokeWidth={2} />
                   {couponError}
                 </p>

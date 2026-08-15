@@ -32,13 +32,19 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
 
+  // Close the mobile menu when the route changes. Adjusted directly during
+  // render (React's documented pattern for resetting state when a prop
+  // changes) rather than in an effect, since a plain effect would run an
+  // extra commit after every navigation just to flip this flag back off.
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname)
+    setMenuOpen(false)
+  }
+
   useEffect(() => {
     if (session) fetchCart()
   }, [session, fetchCart])
-
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [pathname])
 
   const cartCount = totalItems()
   const isActive = (href: string) => (href === '/' ? pathname === '/' : pathname?.startsWith(href))

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { stripe } from '@/lib/stripe'
+import { createOrderFromCart, InsufficientStockError, isUniqueConstraintViolation } from '@/lib/create-order-from-cart'
 
 const placeOrderSchema = z.object({
   addressId: z.number().int().positive().optional(),
@@ -34,6 +35,10 @@ export async function GET() {
 
 // POST /api/orders — place order from current cart
 export async function POST(request: NextRequest) {
+  // Hoisted so the catch block can use it too (e.g. to resolve a race with
+  // the webhook's safety-net order creation for the same PaymentIntent).
+  let paymentIntentId: string | undefined
+
   try {
     const session = await auth()
     if (!session?.user?.id) {
@@ -47,7 +52,8 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = parseInt(session.user.id)
-    const { addressId, paymentIntentId, couponCode } = parsed.data
+    const { addressId, couponCode } = parsed.data
+    paymentIntentId = parsed.data.paymentIntentId
 
     // If a PaymentIntent ID is provided, verify it was actually paid with Stripe
     if (paymentIntentId) {
@@ -58,120 +64,36 @@ export async function POST(request: NextRequest) {
           { status: 402 }
         )
       }
-      // Guard against replay: ensure this PI hasn't already created an order
+      // Guard against replay: ensure this PI hasn't already created an order.
+      // (It may have been created by the Stripe webhook's safety-net path if
+      // that fired before this request reached us.)
       const duplicate = await prisma.order.findUnique({
         where: { stripePaymentIntentId: paymentIntentId },
+        include: { orderItems: { include: { product: true } } },
       })
       if (duplicate) {
         return NextResponse.json(duplicate, { status: 200 })
       }
     }
 
-    const cartItems = await prisma.cartItem.findMany({
-      where: { userId },
-      include: { product: true },
-    })
-
-    if (cartItems.length === 0) {
-      return NextResponse.json({ error: 'Cart is empty' }, { status: 400 })
-    }
-
-    // Validate stock for every item before touching the DB
-    for (const item of cartItems) {
-      if (item.product.stock < item.quantity) {
-        return NextResponse.json(
-          { error: `Insufficient stock for: ${item.product.name}` },
-          { status: 409 }
-        )
-      }
-    }
-
-    let shipFields = {}
-    if (addressId) {
-      const address = await prisma.address.findUnique({ where: { id: addressId } })
-      if (!address || address.userId !== userId) {
-        return NextResponse.json({ error: 'Address not found' }, { status: 404 })
-      }
-      shipFields = {
-        shipRecipientName: address.recipientName,
-        shipLine1: address.line1,
-        shipLine2: address.line2,
-        shipCity: address.city,
-        shipState: address.state,
-        shipPostalCode: address.postalCode,
-        shipCountry: address.country,
-        shipPhone: address.phone,
-      }
-    }
-
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-    const shipping = subtotal >= 5000 ? 0 : 500
-
-    // Apply coupon
-    let discount = 0
-    let appliedCoupon = null
-    if (couponCode) {
-      const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase() } })
-      if (coupon && coupon.active) {
-        const now = new Date()
-        const valid =
-          (!coupon.expiresAt || coupon.expiresAt > now) &&
-          (coupon.maxUses === null || coupon.usedCount < coupon.maxUses) &&
-          (coupon.minOrderAmount === null || subtotal >= coupon.minOrderAmount)
-        if (valid) {
-          discount = coupon.type === 'PERCENTAGE'
-            ? Math.floor(subtotal * (coupon.value / 100))
-            : Math.min(coupon.value, subtotal)
-          appliedCoupon = coupon
-        }
-      }
-    }
-
-    const totalAmount = Math.max(0, subtotal + shipping - discount)
-
-    // Create order and decrement stock in a transaction
-    const order = await prisma.$transaction(async (tx) => {
-      for (const item of cartItems) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        })
-      }
-
-      const newOrder = await tx.order.create({
-        data: {
-          userId,
-          totalAmount,
-          discountAmount: discount,
-          couponCode: appliedCoupon?.code ?? null,
-          stripePaymentIntentId: paymentIntentId ?? null,
-          ...shipFields,
-          orderItems: {
-            create: cartItems.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
-        },
-        include: { orderItems: { include: { product: true } } },
-      })
-
-      // Increment coupon usage
-      if (appliedCoupon) {
-        await tx.coupon.update({
-          where: { id: appliedCoupon.id },
-          data: { usedCount: { increment: 1 } },
-        })
-      }
-
-      await tx.cartItem.deleteMany({ where: { userId } })
-
-      return newOrder
-    })
-
+    const order = await createOrderFromCart({ userId, paymentIntentId, addressId, couponCode })
     return NextResponse.json(order, { status: 201 })
   } catch (error) {
+    if (error instanceof InsufficientStockError) {
+      return NextResponse.json({ error: error.message }, { status: 409 })
+    }
+    if (isUniqueConstraintViolation(error) && paymentIntentId) {
+      // Lost a race with a concurrent order-creation attempt for the same
+      // PaymentIntent (e.g. the webhook's safety net won first) — return
+      // whichever order won instead of surfacing a 500 to the client.
+      const existing = await prisma.order.findUnique({
+        where: { stripePaymentIntentId: paymentIntentId },
+        include: { orderItems: { include: { product: true } } },
+      })
+      if (existing) {
+        return NextResponse.json(existing, { status: 200 })
+      }
+    }
     console.error('place order error:', error)
     return NextResponse.json({ error: 'Failed to place order' }, { status: 500 })
   }

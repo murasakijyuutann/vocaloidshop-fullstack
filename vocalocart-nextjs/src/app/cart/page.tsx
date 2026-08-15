@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { PriceTag } from '@/components/PriceTag'
 import { QuantityStepper } from '@/components/QuantityStepper'
 import { EmptyState } from '@/components/EmptyState'
+import { calculateShipping } from '@/lib/pricing'
 
 export default function CartPage() {
   const { status } = useSession()
@@ -58,7 +59,7 @@ export default function CartPage() {
   }
 
   const subtotal = totalPrice()
-  const shipping = subtotal > 0 ? (subtotal >= 5000 ? 0 : 500) : 0
+  const shipping = subtotal > 0 ? calculateShipping(subtotal) : 0
   const total = subtotal + shipping
 
   return (

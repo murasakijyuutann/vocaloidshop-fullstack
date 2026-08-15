@@ -13,25 +13,29 @@ function CheckoutCompleteContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
-  const [orderState, setOrderState] = useState<'loading' | 'success' | 'error'>('loading')
+
+  const paymentIntentId = searchParams.get('payment_intent')
+  const piStatus = searchParams.get('redirect_status')
+  const addressId = searchParams.get('addressId')
+  const couponCode = searchParams.get('couponCode') ?? undefined
+  const hasValidPaymentIntent = !!paymentIntentId && piStatus === 'succeeded'
+
+  // The validity of the redirect params is known synchronously from the URL,
+  // so it's encoded directly in the initial state instead of being set from
+  // inside the effect below (which only needs to run the async order-confirm
+  // request once we know we actually have something to confirm).
+  const [orderState, setOrderState] = useState<'loading' | 'success' | 'error'>(
+    hasValidPaymentIntent ? 'loading' : 'error'
+  )
   const [orderId, setOrderId] = useState<number | null>(null)
   const ran = useRef(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') { router.push('/login'); return }
     if (status !== 'authenticated') return
+    if (!hasValidPaymentIntent) return
     if (ran.current) return
     ran.current = true
-
-    const paymentIntentId = searchParams.get('payment_intent')
-    const piStatus = searchParams.get('redirect_status')
-    const addressId = searchParams.get('addressId')
-    const couponCode = searchParams.get('couponCode') ?? undefined
-
-    if (!paymentIntentId || piStatus !== 'succeeded') {
-      setOrderState('error')
-      return
-    }
 
     fetch('/api/orders', {
       method: 'POST',
@@ -54,7 +58,7 @@ function CheckoutCompleteContent() {
         }
       })
       .catch(() => setOrderState('error'))
-  }, [status, searchParams, router, clearCart])
+  }, [status, hasValidPaymentIntent, paymentIntentId, addressId, couponCode, router, clearCart])
 
   if (orderState === 'loading') {
     return (

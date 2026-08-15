@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+
+const idParamSchema = z.coerce.number().int().positive()
 
 // GET /api/orders/[id]
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,9 +13,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
+    const { id: idParam } = await params
+    const parsedId = idParamSchema.safeParse(idParam)
+    if (!parsedId.success) {
+      return NextResponse.json({ error: 'Invalid order id' }, { status: 400 })
+    }
+    const id = parsedId.data
+
     const order = await prisma.order.findUnique({
-      where: { id: parseInt(id) },
+      where: { id },
       include: { orderItems: { include: { product: true } } },
     })
 
@@ -37,8 +46,14 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
-    const order = await prisma.order.findUnique({ where: { id: parseInt(id) } })
+    const { id: idParam } = await params
+    const parsedId = idParamSchema.safeParse(idParam)
+    if (!parsedId.success) {
+      return NextResponse.json({ error: 'Invalid order id' }, { status: 400 })
+    }
+    const id = parsedId.data
+
+    const order = await prisma.order.findUnique({ where: { id } })
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     if (order.userId !== parseInt(session.user.id)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
@@ -53,7 +68,7 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
     }
 
     const updated = await prisma.order.update({
-      where: { id: parseInt(id) },
+      where: { id },
       data: { status: 'CANCELED' },
     })
 

@@ -117,8 +117,9 @@ export default function AddressesPage() {
           <form onSubmit={handleSave} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {FIELDS.map(({ key, label, required, col }) => (
               <div key={key} className={col ?? ''}>
-                <label className="mb-1 block text-sm font-medium text-foreground">{label}</label>
+                <label htmlFor={`address-${key}`} className="mb-1 block text-sm font-medium text-foreground">{label}</label>
                 <Input
+                  id={`address-${key}`}
                   type="text"
                   value={form[key] as string}
                   onChange={e => f(key, e.target.value)}

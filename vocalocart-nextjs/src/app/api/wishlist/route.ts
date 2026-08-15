@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+
+const addWishlistSchema = z.object({
+  productId: z.coerce.number().int().positive('productId is required'),
+})
 
 // GET /api/wishlist — current user's wishlist
 export async function GET() {
@@ -30,10 +35,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { productId } = await request.json()
-    if (!productId) {
-      return NextResponse.json({ error: 'productId is required' }, { status: 400 })
+    const body = await request.json()
+    const parsed = addWishlistSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
+    const { productId } = parsed.data
 
     const userId = parseInt(session.user.id)
 
