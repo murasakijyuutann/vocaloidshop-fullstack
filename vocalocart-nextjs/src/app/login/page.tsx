@@ -4,6 +4,10 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,7 +33,7 @@ export default function LoginPage() {
     try {
       const res = await signIn('credentials', { email, password, redirect: false })
       if (res?.ok) {
-        toast.success('Welcome back! 🎵')
+        toast.success('Welcome back')
         router.push('/')
         router.refresh()
       } else {
@@ -42,63 +46,75 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 sm:p-10 animate-[fadeInUp_0.5s_ease]">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-3">🎵</div>
-          <h1 className="text-3xl font-bold text-gray-800">Welcome Back</h1>
-          <p className="text-gray-500 mt-1">Sign in to your VocaloCart account</p>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background p-4 page-enter">
+      <div className="w-full max-w-md rounded-lg border border-border bg-surface p-8 sm:p-10">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+            VC
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Sign in to your VocaloCart account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">📧</span>
-              <input
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type="email"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setErrors(v => ({ ...v, email: undefined })) }}
                 placeholder="you@example.com"
-                className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl text-sm transition-colors focus:outline-none ${errors.email ? 'border-red-400 bg-red-50 focus:border-red-400' : 'border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}
+                className={cn('pl-9', errors.email && 'border-destructive')}
               />
             </div>
-            {errors.email && <p className="text-red-500 text-xs mt-1">⚠️ {errors.email}</p>}
+            {errors.email && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                {errors.email}
+              </p>
+            )}
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
-              <input
+              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type={showPw ? 'text' : 'password'}
                 value={password}
                 onChange={e => { setPassword(e.target.value); setErrors(v => ({ ...v, password: undefined })) }}
                 placeholder="••••••••"
-                className={`w-full pl-10 pr-12 py-3 border-2 rounded-xl text-sm transition-colors focus:outline-none ${errors.password ? 'border-red-400 bg-red-50 focus:border-red-400' : 'border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}
+                className={cn('pl-9 pr-9', errors.password && 'border-destructive')}
               />
-              <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500 transition-colors">
-                {showPw ? '🙈' : '👁️'}
+              <button
+                type="button"
+                onClick={() => setShowPw(v => !v)}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showPw ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
               </button>
             </div>
-            {errors.password && <p className="text-red-500 text-xs mt-1">⚠️ {errors.password}</p>}
+            {errors.password && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                {errors.password}
+              </p>
+            )}
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-base mt-2"
-          >
-            {loading ? '⏳ Signing in…' : '🚀 Sign In'}
-          </button>
+          <Button type="submit" disabled={loading} className="mt-2 w-full">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
+            {loading ? 'Signing in…' : 'Sign in'}
+          </Button>
         </form>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-indigo-600 font-semibold hover:text-purple-600 transition-colors">
-            Create one →
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="font-medium text-secondary hover:underline">
+            Create one
           </Link>
         </p>
       </div>

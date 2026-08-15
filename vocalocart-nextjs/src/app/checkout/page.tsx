@@ -11,6 +11,27 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  Lock,
+  MapPin,
+  ShieldCheck,
+  ShoppingCart,
+  Tag,
+  X,
+  XCircle,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/PageHeader'
+import { PriceTag } from '@/components/PriceTag'
+import { cn } from '@/lib/utils'
+import { resolveCssColor } from '@/lib/resolve-css-color'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -67,21 +88,23 @@ function StripePaymentForm({
     <form onSubmit={handlePay} className="space-y-5">
       <PaymentElement options={{ layout: 'tabs' }} />
       <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={paying}
-          className="flex-1 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-indigo-400 transition-all disabled:opacity-50"
-        >
-          ← Back
-        </button>
-        <button
-          type="submit"
-          disabled={!stripe || paying}
-          className="flex-[2] py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-        >
-          {paying ? '⏳ Processing…' : '🔒 Pay Now'}
-        </button>
+        <Button type="button" variant="outline" onClick={onBack} disabled={paying} className="flex-1">
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <Button type="submit" disabled={!stripe || paying} className="flex-2">
+          {paying ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing…
+            </>
+          ) : (
+            <>
+              <Lock className="h-4 w-4" />
+              Pay now
+            </>
+          )}
+        </Button>
       </div>
     </form>
   )
@@ -89,7 +112,7 @@ function StripePaymentForm({
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const { items, totalPrice, totalItems, fetchCart } = useCart()
 
@@ -99,7 +122,7 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState('')
   const [couponCode, setCouponCode] = useState('')
   const [discount, setDiscount] = useState(0)
-  const [couponMsg, setCouponMsg] = useState('')
+  const [couponError, setCouponError] = useState('')
   const [validatingCoupon, setValidatingCoupon] = useState(false)
 
   const [clientSecret, setClientSecret] = useState<string | null>(null)
@@ -120,7 +143,18 @@ export default function CheckoutPage() {
   }, [status, router, fetchCart])
 
   if (status === 'loading') {
-    return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-8 h-9 w-40" />
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
+          <div className="space-y-6">
+            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-40 w-full rounded-lg" />
+          </div>
+          <Skeleton className="h-96 w-full rounded-lg" />
+        </div>
+      </div>
+    )
   }
 
   const subtotal = totalPrice()
@@ -131,7 +165,7 @@ export default function CheckoutPage() {
     const code = couponInput.trim().toUpperCase()
     if (!code) return
     setValidatingCoupon(true)
-    setCouponMsg('')
+    setCouponError('')
     try {
       const res = await fetch('/api/coupons/validate', {
         method: 'POST',
@@ -142,12 +176,11 @@ export default function CheckoutPage() {
       if (data.valid) {
         setCouponCode(code)
         setDiscount(data.discount)
-        setCouponMsg(`✅ Coupon applied! You save ¥${data.discount.toLocaleString()}`)
         toast.success(`Coupon applied — ¥${data.discount.toLocaleString()} off`)
       } else {
         setCouponCode('')
         setDiscount(0)
-        setCouponMsg(`❌ ${data.error}`)
+        setCouponError(data.error ?? 'Invalid coupon')
       }
     } finally {
       setValidatingCoupon(false)
@@ -158,7 +191,7 @@ export default function CheckoutPage() {
     setCouponCode('')
     setCouponInput('')
     setDiscount(0)
-    setCouponMsg('')
+    setCouponError('')
     setClientSecret(null)
   }
 
@@ -186,53 +219,92 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">🚀 Checkout</h1>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader title="Checkout" />
 
-      <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left column */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">📦 Shipping Address</h2>
+          <div className="rounded-lg border border-border bg-surface p-6">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+              <MapPin className="h-4 w-4" strokeWidth={2} />
+              Shipping address
+            </h2>
             {addresses.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">No saved addresses. Please add one first.</p>
-                <button onClick={() => router.push('/addresses')} className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all">
-                  + Add Address
-                </button>
+              <div className="py-8 text-center">
+                <p className="mb-4 text-sm text-muted-foreground">
+                  No saved addresses. Please add one first.
+                </p>
+                <Button onClick={() => router.push('/addresses')}>Add address</Button>
               </div>
             ) : (
               <div className="space-y-3">
                 {addresses.map(addr => (
-                  <label key={addr.id} className={`flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-colors ${selectedAddressId === addr.id ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'}`}>
-                    <input type="radio" name="address" checked={selectedAddressId === addr.id} onChange={() => { setSelectedAddressId(addr.id); setClientSecret(null) }} className="mt-1 accent-indigo-600" />
+                  <label
+                    key={addr.id}
+                    className={cn(
+                      'flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors',
+                      selectedAddressId === addr.id
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-muted-foreground/40'
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name="address"
+                      checked={selectedAddressId === addr.id}
+                      onChange={() => { setSelectedAddressId(addr.id); setClientSecret(null) }}
+                      className="mt-1 accent-primary"
+                    />
                     <div className="text-sm">
-                      <p className="font-semibold text-gray-800">{addr.recipientName}</p>
-                      <p className="text-gray-600">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
-                      <p className="text-gray-600">{addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}</p>
-                      <p className="text-gray-600">{addr.country} · {addr.phone}</p>
-                      {addr.isDefault && <span className="inline-block mt-1 px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs font-semibold rounded-full">Default</span>}
+                      <p className="font-medium text-foreground">{addr.recipientName}</p>
+                      <p className="text-muted-foreground">
+                        {addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}
+                      </p>
+                      <p className="text-muted-foreground">
+                        {addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}
+                      </p>
+                      <p className="text-muted-foreground">{addr.country} · {addr.phone}</p>
+                      {addr.isDefault && (
+                        <Badge variant="outline" className="mt-1.5 text-muted-foreground">
+                          Default
+                        </Badge>
+                      )}
                     </div>
                   </label>
                 ))}
-                <button onClick={() => router.push('/addresses')} className="text-indigo-600 font-semibold text-sm hover:text-purple-600 transition-colors">+ Add new address</button>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/addresses')}>
+                  + Add new address
+                </Button>
               </div>
             )}
           </div>
 
-          <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">🛒 Items ({totalItems()})</h2>
-            <div className="divide-y divide-gray-100">
+          <div className="rounded-lg border border-border bg-surface p-6">
+            <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+              <ShoppingCart className="h-4 w-4" strokeWidth={2} />
+              Items ({totalItems()})
+            </h2>
+            <div className="divide-y divide-border">
               {items.map(item => (
-                <div key={item.id} className="py-3 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center overflow-hidden shrink-0">
-                    {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" /> : <span className="text-xl">🎵</span>}
+                <div key={item.id} className="flex items-center gap-4 py-3">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                    {item.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <span className="text-xs font-bold tracking-tight text-muted-foreground/40">VC</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800 text-sm truncate">{item.name}</p>
-                    <p className="text-gray-500 text-xs">¥{item.price.toLocaleString()} × {item.quantity}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      ¥{item.price.toLocaleString()} × {item.quantity}
+                    </p>
                   </div>
-                  <p className="font-bold text-gray-800 text-sm">¥{(item.price * item.quantity).toLocaleString()}</p>
+                  <PriceTag value={item.price * item.quantity} size="sm" />
                 </div>
               ))}
             </div>
@@ -241,79 +313,127 @@ export default function CheckoutPage() {
 
         {/* Right column */}
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl shadow-md p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 pb-4 border-b border-gray-100">Order Summary</h2>
+          <div className="rounded-lg border border-border bg-surface p-6">
+            <h2 className="mb-4 border-b border-border pb-4 text-lg font-bold text-foreground">
+              Order Summary
+            </h2>
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>¥{subtotal.toLocaleString()}</span></div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-muted-foreground">
+                <span>Subtotal</span><span>¥{subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-muted-foreground">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? <span className="text-green-600 font-semibold">FREE</span> : `¥${shipping.toLocaleString()}`}</span>
+                <span>{shipping === 0 ? 'Free' : `¥${shipping.toLocaleString()}`}</span>
               </div>
               {discount > 0 && (
-                <div className="flex justify-between text-green-600 font-semibold">
+                <div className="flex justify-between text-muted-foreground">
                   <span>Coupon ({couponCode})</span><span>−¥{discount.toLocaleString()}</span>
                 </div>
               )}
             </div>
-            <div className="flex justify-between font-bold text-xl text-gray-800 mt-4 pt-4 border-t-2 border-gray-200">
-              <span>Total</span><span>¥{total.toLocaleString()}</span>
+            <div className="mt-4 flex justify-between border-t border-border pt-4">
+              <span className="font-semibold text-foreground">Total</span>
+              <PriceTag value={total} size="lg" />
             </div>
           </div>
 
           {!clientSecret && (
-            <div className="bg-white rounded-2xl shadow-md p-6">
-              <h2 className="text-lg font-bold text-gray-800 mb-3">🎟️ Coupon Code</h2>
+            <div className="rounded-lg border border-border bg-surface p-6">
+              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Tag className="h-4 w-4" strokeWidth={2} />
+                Coupon code
+              </h2>
               {couponCode ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                  <span className="font-semibold text-green-700">{couponCode}</span>
-                  <button onClick={handleRemoveCoupon} className="text-red-400 hover:text-red-600 text-sm font-semibold transition-colors">Remove</button>
+                <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                  <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
+                    {couponCode}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={handleRemoveCoupon}>
+                    <X className="h-4 w-4" />
+                    Remove
+                  </Button>
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <input
-                    type="text"
+                  <Input
                     placeholder="Enter code"
                     value={couponInput}
-                    onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponMsg('') }}
+                    onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
                     onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                   />
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={handleApplyCoupon}
                     disabled={validatingCoupon || !couponInput.trim()}
-                    className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                   >
-                    {validatingCoupon ? '…' : 'Apply'}
-                  </button>
+                    {validatingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                  </Button>
                 </div>
               )}
-              {couponMsg && <p className={`text-xs mt-2 font-medium ${couponMsg.startsWith('✅') ? 'text-green-600' : 'text-red-500'}`}>{couponMsg}</p>}
+              {couponError && (
+                <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-destructive">
+                  <XCircle className="h-3.5 w-3.5" strokeWidth={2} />
+                  {couponError}
+                </p>
+              )}
             </div>
           )}
 
-          <div className="bg-white rounded-2xl shadow-md p-6">
+          <div className="rounded-lg border border-border bg-surface p-6">
             {clientSecret ? (
               <>
-                <h2 className="text-lg font-bold text-gray-800 mb-4">💳 Payment Details</h2>
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
+                  <CreditCard className="h-4 w-4" strokeWidth={2} />
+                  Payment details
+                </h2>
                 <Elements
                   stripe={stripePromise}
-                  options={{ clientSecret, appearance: { theme: 'stripe', variables: { colorPrimary: '#6366f1' } } }}
+                  options={{
+                    clientSecret,
+                    appearance: {
+                      theme: 'night',
+                      variables: {
+                        colorPrimary: resolveCssColor('--secondary'),
+                        colorBackground: resolveCssColor('--surface'),
+                        colorText: resolveCssColor('--foreground'),
+                        colorTextSecondary: resolveCssColor('--muted-foreground'),
+                        colorDanger: resolveCssColor('--destructive'),
+                        borderRadius: '8px',
+                        fontFamily: 'inherit',
+                      },
+                    },
+                  }}
                 >
                   <StripePaymentForm addressId={selectedAddressId} couponCode={couponCode} onBack={() => setClientSecret(null)} />
                 </Elements>
               </>
             ) : (
-              <button
+              <Button
+                size="lg"
+                className="w-full"
                 onClick={handleProceedToPayment}
                 disabled={creatingIntent || items.length === 0 || addresses.length === 0}
-                className="w-full py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
               >
-                {creatingIntent ? '⏳ Loading payment…' : '💳 Proceed to Payment'}
-              </button>
+                {creatingIntent ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading payment…
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="h-4 w-4" />
+                    Proceed to payment
+                  </>
+                )}
+              </Button>
             )}
           </div>
 
-          <p className="text-center text-xs text-gray-400">Secured by Stripe · Your payment info is never stored on our servers.</p>
+          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
+            Secured by Stripe · Your payment info is never stored on our servers.
+          </p>
         </div>
       </div>
     </div>

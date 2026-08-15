@@ -3,29 +3,13 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-
-const ALL_STATUSES = ['PAYMENT_RECEIVED', 'PROCESSING', 'PREPARING', 'READY_FOR_DELIVERY', 'IN_DELIVERY', 'DELIVERED', 'CANCELED'] as const
-type OrderStatus = typeof ALL_STATUSES[number]
-
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  PAYMENT_RECEIVED: 'bg-blue-100 text-blue-700',
-  PROCESSING: 'bg-yellow-100 text-yellow-700',
-  PREPARING: 'bg-orange-100 text-orange-700',
-  READY_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
-  IN_DELIVERY: 'bg-indigo-100 text-indigo-700',
-  DELIVERED: 'bg-green-100 text-green-700',
-  CANCELED: 'bg-red-100 text-red-700',
-}
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  PAYMENT_RECEIVED: '💳 Payment Received',
-  PROCESSING: '⚙️ Processing',
-  PREPARING: '📦 Preparing',
-  READY_FOR_DELIVERY: '🚚 Ready for Delivery',
-  IN_DELIVERY: '🛵 In Delivery',
-  DELIVERED: '✅ Delivered',
-  CANCELED: '❌ Canceled',
-}
+import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { PageHeader } from '@/components/PageHeader'
+import { OrderStatusBadge } from '@/components/OrderStatusBadge'
+import { ORDER_STATUSES, ORDER_STATUS_META, type OrderStatus } from '@/lib/order-status'
 
 interface Order {
   id: number
@@ -62,8 +46,8 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ status: newStatus }),
       })
       if (res.ok) {
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
-        toast.success(`Order #${orderId} updated to ${STATUS_LABELS[newStatus]}`)
+        setOrders(prev => prev.map(o => (o.id === orderId ? { ...o, status: newStatus } : o)))
+        toast.success(`Order #${orderId} updated to ${ORDER_STATUS_META[newStatus].label}`)
       } else {
         const d = await res.json()
         toast.error(d.error ?? 'Failed to update order')
@@ -73,85 +57,87 @@ export default function AdminOrdersPage() {
     }
   }
 
-  if (loading) return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
-
   const filtered = filter ? orders.filter(o => o.status === filter) : orders
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">⚙️ Admin – Orders</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span className="font-semibold">{filtered.length}</span> orders
-        </div>
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-8 h-9 w-56" />
+        <Skeleton className="h-96 w-full rounded-lg" />
       </div>
+    )
+  }
 
-      {/* Filter tabs */}
-      <div className="flex gap-2 flex-wrap mb-6">
-        <button
-          onClick={() => setFilter('')}
-          className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ${filter === '' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50'}`}
-        >
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader
+        title="Admin – Orders"
+        description={`${filtered.length} order${filtered.length === 1 ? '' : 's'}`}
+      />
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <Button variant={filter === '' ? 'default' : 'outline'} size="sm" onClick={() => setFilter('')}>
           All ({orders.length})
-        </button>
-        {ALL_STATUSES.map(s => {
+        </Button>
+        {ORDER_STATUSES.map(s => {
           const count = orders.filter(o => o.status === s).length
           if (count === 0) return null
           return (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={`px-3 py-1.5 rounded-xl text-sm font-semibold transition-colors ${filter === s ? 'bg-indigo-600 text-white' : `${STATUS_COLORS[s]} hover:opacity-80`}`}
-            >
-              {STATUS_LABELS[s]} ({count})
-            </button>
+            <Button key={s} variant={filter === s ? 'default' : 'outline'} size="sm" onClick={() => setFilter(s)}>
+              {ORDER_STATUS_META[s].label} ({count})
+            </Button>
           )
         })}
       </div>
 
-      {/* Orders table */}
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Order</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Customer</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Date</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Items</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Total</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Status</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-700">Actions</th>
+              <tr className="border-b border-border">
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Order</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Customer</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Date</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Items</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Total</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-border">
               {filtered.map(order => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-bold text-gray-800">#{order.id}</td>
+                <tr key={order.id} className="transition-colors hover:bg-accent">
+                  <td className="px-4 py-3 font-bold text-foreground">#{order.id}</td>
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-gray-800">{order.user.name}</p>
-                    <p className="text-gray-500 text-xs">{order.user.email}</p>
+                    <p className="font-medium text-foreground">{order.user.name}</p>
+                    <p className="text-xs text-muted-foreground">{order.user.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {new Date(order.orderedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{order.orderItems.length}</td>
-                  <td className="px-4 py-3 font-bold text-indigo-600">¥{order.totalAmount.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{order.orderItems.length}</td>
+                  <td className="px-4 py-3 font-semibold text-secondary">¥{order.totalAmount.toLocaleString()}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[order.status]}`}>
-                      {STATUS_LABELS[order.status]}
-                    </span>
+                    <OrderStatusBadge status={order.status} />
                   </td>
                   <td className="px-4 py-3">
-                    <select
-                      value={order.status}
-                      onChange={e => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                      disabled={updatingId === order.id}
-                      className="text-xs border-2 border-gray-200 rounded-xl px-2 py-1.5 bg-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 cursor-pointer"
-                    >
-                      {ALL_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={order.status}
+                        onValueChange={v => handleStatusChange(order.id, v as OrderStatus)}
+                        disabled={updatingId === order.id}
+                      >
+                        <SelectTrigger size="sm" className="w-45">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ORDER_STATUSES.map(s => (
+                            <SelectItem key={s} value={s}>{ORDER_STATUS_META[s].label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {updatingId === order.id && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" strokeWidth={2} />}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -159,7 +145,7 @@ export default function AdminOrdersPage() {
           </table>
 
           {filtered.length === 0 && (
-            <div className="text-center py-12 text-gray-500">No orders found.</div>
+            <div className="py-12 text-center text-muted-foreground">No orders found.</div>
           )}
         </div>
       </div>

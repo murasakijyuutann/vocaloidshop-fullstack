@@ -4,6 +4,12 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { Mail, Phone, Cake, CalendarDays, Pencil, Package, MapPin, Heart, Loader2, ShieldCheck } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/PageHeader'
 
 interface UserProfile {
   id: number
@@ -16,7 +22,7 @@ interface UserProfile {
 }
 
 export default function MyPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [editing, setEditing] = useState(false)
@@ -47,7 +53,7 @@ export default function MyPage() {
       if (res.ok) {
         setProfile(data.user)
         setEditing(false)
-        toast.success('Profile updated! ✨')
+        toast.success('Profile updated')
       } else {
         toast.error(data.error ?? 'Failed to update profile')
       }
@@ -56,107 +62,113 @@ export default function MyPage() {
     }
   }
 
-  if (loading) return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-8 h-9 w-40" />
+        <Skeleton className="mb-6 h-28 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </div>
+    )
+  }
   if (!profile) return null
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">👤 My Page</h1>
+  const details = [
+    { label: 'Email', value: profile.email, icon: Mail },
+    { label: 'Phone', value: profile.phone ?? '—', icon: Phone },
+    { label: 'Birthday', value: profile.birthday ? new Date(profile.birthday).toLocaleDateString() : '—', icon: Cake },
+    { label: 'Member since', value: new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }), icon: CalendarDays },
+  ]
 
-      {/* Avatar card */}
-      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl text-white p-6 mb-6 flex items-center gap-5">
-        <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center text-4xl shrink-0">
+  const quickLinks = [
+    { href: '/orders', icon: Package, label: 'My Orders' },
+    { href: '/addresses', icon: MapPin, label: 'Addresses' },
+    { href: '/wishlist', icon: Heart, label: 'Wishlist' },
+  ]
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader title="My Page" />
+
+      <div className="mb-6 flex items-center gap-5 rounded-lg border border-border bg-surface p-6">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
           {profile.name.charAt(0).toUpperCase()}
         </div>
         <div>
-          <h2 className="text-2xl font-bold">{profile.name}</h2>
-          <p className="text-white/80 text-sm">{profile.email}</p>
+          <h2 className="text-xl font-bold text-foreground">{profile.name}</h2>
+          <p className="text-sm text-muted-foreground">{profile.email}</p>
           {profile.isAdmin && (
-            <span className="inline-block mt-1.5 px-2.5 py-0.5 bg-white/20 rounded-full text-xs font-semibold">⚙️ Admin</span>
+            <Badge variant="outline" className="mt-1.5 gap-1 text-muted-foreground">
+              <ShieldCheck className="h-3 w-3" strokeWidth={2} />
+              Admin
+            </Badge>
           )}
         </div>
       </div>
 
-      {/* Profile details / edit form */}
-      <div className="bg-white rounded-2xl shadow-md p-6 mb-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Profile Details</h2>
+      <div className="mb-4 rounded-lg border border-border bg-surface p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground">Profile Details</h2>
           {!editing && (
-            <button
-              onClick={() => setEditing(true)}
-              className="px-4 py-2 border-2 border-indigo-500 text-indigo-600 font-semibold rounded-xl text-sm hover:bg-indigo-500 hover:text-white transition-all"
-            >
-              ✏️ Edit
-            </button>
+            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <Pencil className="h-4 w-4" strokeWidth={2} />
+              Edit
+            </Button>
           )}
         </div>
 
         {editing ? (
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                required
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
-              />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Phone <span className="font-normal text-gray-400">(optional)</span></label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
-              />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Phone <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Birthday <span className="font-normal text-gray-400">(optional)</span></label>
-              <input
-                type="date"
-                value={form.birthday}
-                onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
-              />
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Birthday <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Input type="date" value={form.birthday} onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))} />
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={saving} className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all disabled:opacity-70">
-                {saving ? '⏳ Saving…' : '✅ Save'}
-              </button>
-              <button type="button" onClick={() => setEditing(false)} className="px-6 py-2.5 border-2 border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setEditing(false)}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
           <dl className="space-y-4 text-sm">
-            {[
-              { label: '📧 Email', value: profile.email },
-              { label: '📱 Phone', value: profile.phone ?? '—' },
-              { label: '🎂 Birthday', value: profile.birthday ? new Date(profile.birthday).toLocaleDateString() : '—' },
-              { label: '📅 Member since', value: new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex gap-4">
-                <dt className="w-36 font-semibold text-gray-700 shrink-0">{label}</dt>
-                <dd className="text-gray-600">{value}</dd>
+            {details.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="flex items-center gap-3">
+                <dt className="flex w-36 shrink-0 items-center gap-2 font-medium text-muted-foreground">
+                  <Icon className="h-4 w-4" strokeWidth={2} />
+                  {label}
+                </dt>
+                <dd className="text-foreground">{value}</dd>
               </div>
             ))}
           </dl>
         )}
       </div>
 
-      {/* Quick links */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {[
-          { href: '/orders', emoji: '📦', label: 'My Orders' },
-          { href: '/addresses', emoji: '🏠', label: 'Addresses' },
-          { href: '/wishlist', emoji: '❤️', label: 'Wishlist' },
-        ].map(({ href, emoji, label }) => (
-          <Link key={href} href={href} className="bg-white rounded-2xl shadow-md p-4 text-center hover:shadow-lg hover:-translate-y-1 transition-all">
-            <div className="text-3xl mb-2">{emoji}</div>
-            <p className="font-semibold text-gray-700 text-sm">{label}</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {quickLinks.map(({ href, icon: Icon, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex flex-col items-center gap-2 rounded-lg border border-border bg-surface p-4 text-center transition-colors hover:border-muted-foreground/40"
+          >
+            <Icon className="h-6 w-6 text-secondary" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-foreground">{label}</p>
           </Link>
         ))}
       </div>

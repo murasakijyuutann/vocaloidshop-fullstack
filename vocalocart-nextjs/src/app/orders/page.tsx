@@ -4,6 +4,15 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { ChevronDown, Package, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/PageHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { PriceTag } from '@/components/PriceTag'
+import { OrderStatusBadge } from '@/components/OrderStatusBadge'
+import { cn } from '@/lib/utils'
+import type { OrderStatus } from '@/lib/order-status'
 
 interface OrderItem {
   id: number
@@ -17,31 +26,11 @@ interface OrderItem {
 
 interface Order {
   id: number
-  status: string
+  status: OrderStatus
   totalAmount: number
   orderedAt: string
   shipRecipientName?: string | null
   orderItems: OrderItem[]
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  PAYMENT_RECEIVED: 'bg-blue-100 text-blue-700',
-  PROCESSING: 'bg-yellow-100 text-yellow-700',
-  PREPARING: 'bg-orange-100 text-orange-700',
-  READY_FOR_DELIVERY: 'bg-purple-100 text-purple-700',
-  IN_DELIVERY: 'bg-indigo-100 text-indigo-700',
-  DELIVERED: 'bg-green-100 text-green-700',
-  CANCELED: 'bg-red-100 text-red-700',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  PAYMENT_RECEIVED: '💳 Payment Received',
-  PROCESSING: '⚙️ Processing',
-  PREPARING: '📦 Preparing',
-  READY_FOR_DELIVERY: '🚚 Ready for Delivery',
-  IN_DELIVERY: '🛵 In Delivery',
-  DELIVERED: '✅ Delivered',
-  CANCELED: '❌ Canceled',
 }
 
 export default function OrdersPage() {
@@ -52,16 +41,16 @@ export default function OrdersPage() {
   const [expanded, setExpanded] = useState<number | null>(null)
 
   useEffect(() => {
-  if (status === 'loading') return
-  if (status === 'unauthenticated') router.push('/login')
-  if (status === 'authenticated') {
-    fetch('/api/orders')
-      .then(r => r.json())
-      .then(d => setOrders(d.orders ?? []))
-      .catch(() => setOrders([]))
-      .finally(() => setLoading(false))
-  }
-}, [status, router])
+    if (status === 'loading') return
+    if (status === 'unauthenticated') router.push('/login')
+    if (status === 'authenticated') {
+      fetch('/api/orders')
+        .then(r => r.json())
+        .then(d => setOrders(d.orders ?? []))
+        .catch(() => setOrders([]))
+        .finally(() => setLoading(false))
+    }
+  }, [status, router])
 
   const handleCancel = async (id: number) => {
     if (!confirm('Cancel this order?')) return
@@ -71,7 +60,7 @@ export default function OrdersPage() {
       body: JSON.stringify({ action: 'cancel' }),
     })
     if (res.ok) {
-      setOrders(ords => ords.map(o => o.id === id ? { ...o, status: 'CANCELED' } : o))
+      setOrders(ords => ords.map(o => (o.id === id ? { ...o, status: 'CANCELED' } : o)))
       toast.success('Order canceled')
     } else {
       const d = await res.json()
@@ -79,73 +68,83 @@ export default function OrdersPage() {
     }
   }
 
-  if (loading) return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">📦 My Orders</h1>
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader title="My Orders" />
 
-      {orders.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md text-center py-16 px-6">
-          <p className="text-5xl mb-4">📦</p>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No orders yet</h2>
-          <p className="text-gray-500 mb-6">Start shopping to see your orders here!</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all">
-            Shop Now
-          </Link>
+      {loading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          ))}
         </div>
+      ) : orders.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title="No orders yet"
+          description="Start shopping to see your orders here."
+          action={
+            <Button asChild>
+              <Link href="/">Shop now</Link>
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-4">
           {orders.map(order => (
-            <div key={order.id} className="bg-white rounded-2xl shadow-md overflow-hidden">
-              {/* Order header */}
+            <div key={order.id} className="overflow-hidden rounded-lg border border-border bg-surface">
               <button
-                className="w-full p-4 sm:p-6 flex flex-wrap items-center gap-4 text-left hover:bg-gray-50 transition-colors"
+                className="flex w-full flex-wrap items-center gap-4 p-4 text-left transition-colors hover:bg-accent sm:p-6"
                 onClick={() => setExpanded(expanded === order.id ? null : order.id)}
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-bold text-gray-800">Order #{order.id}</span>
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS_COLORS[order.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {STATUS_LABELS[order.status] ?? order.status}
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="font-bold text-foreground">Order #{order.id}</span>
+                    <OrderStatusBadge status={order.status} />
                   </div>
-                  <p className="text-gray-500 text-sm mt-1">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {new Date(order.orderedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                     {order.shipRecipientName && ` · To: ${order.shipRecipientName}`}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-indigo-600 text-lg">¥{order.totalAmount.toLocaleString()}</p>
-                  <p className="text-gray-400 text-xs mt-1">{expanded === order.id ? '▲ Hide' : '▼ Details'}</p>
+                <div className="flex items-center gap-3 text-right">
+                  <PriceTag value={order.totalAmount} />
+                  <ChevronDown
+                    className={cn('h-4 w-4 text-muted-foreground transition-transform', expanded === order.id && 'rotate-180')}
+                    strokeWidth={2}
+                  />
                 </div>
               </button>
 
-              {/* Expanded items */}
               {expanded === order.id && (
-                <div className="border-t border-gray-100 p-4 sm:p-6">
-                  <div className="divide-y divide-gray-100 mb-4">
+                <div className="border-t border-border p-4 sm:p-6">
+                  <div className="mb-4 divide-y divide-border">
                     {order.orderItems.map(item => (
-                      <div key={item.id} className="py-3 flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xl overflow-hidden shrink-0">
-                          {item.product.imageUrl ? <img src={item.product.imageUrl} alt={item.product.name} className="w-full h-full object-cover" /> : '🎵'}
+                      <div key={item.id} className="flex items-center gap-4 py-3">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                          {item.product.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-bold text-muted-foreground/40">VC</span>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-800 text-sm">{item.product.name}</p>
-                          <p className="text-gray-500 text-xs">¥{item.price.toLocaleString()} × {item.quantity}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground">{item.product.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ¥{item.price.toLocaleString()} × {item.quantity}
+                          </p>
                         </div>
-                        <p className="font-bold text-gray-800 text-sm">¥{(item.price * item.quantity).toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-foreground">¥{(item.price * item.quantity).toLocaleString()}</p>
                       </div>
                     ))}
                   </div>
 
                   {(order.status === 'PAYMENT_RECEIVED' || order.status === 'PROCESSING') && (
-                    <button
-                      onClick={() => handleCancel(order.id)}
-                      className="px-4 py-2 text-red-500 border-2 border-red-200 rounded-xl text-sm font-semibold hover:bg-red-50 transition-colors"
-                    >
-                      ❌ Cancel Order
-                    </button>
+                    <Button variant="outline" size="sm" onClick={() => handleCancel(order.id)}>
+                      <X className="h-4 w-4" strokeWidth={2} />
+                      Cancel order
+                    </Button>
                   )}
                 </div>
               )}

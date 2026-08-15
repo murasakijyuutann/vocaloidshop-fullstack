@@ -3,6 +3,14 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { Plus, Pencil, Trash2, CheckCircle2, MapPin, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/PageHeader'
+import { EmptyState } from '@/components/EmptyState'
+import { cn } from '@/lib/utils'
 
 interface Address {
   id: number
@@ -18,6 +26,17 @@ interface Address {
 }
 
 const EMPTY = { recipientName: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: 'Japan', phone: '', isDefault: false }
+
+const FIELDS: { key: keyof typeof EMPTY; label: string; required: boolean; col?: string }[] = [
+  { key: 'recipientName', label: 'Recipient Name', required: true, col: 'sm:col-span-2' },
+  { key: 'line1', label: 'Address Line 1', required: true, col: 'sm:col-span-2' },
+  { key: 'line2', label: 'Address Line 2 (optional)', required: false, col: 'sm:col-span-2' },
+  { key: 'city', label: 'City', required: true },
+  { key: 'state', label: 'State / Province (optional)', required: false },
+  { key: 'postalCode', label: 'Postal Code', required: true },
+  { key: 'country', label: 'Country', required: true },
+  { key: 'phone', label: 'Phone', required: true },
+]
 
 export default function AddressesPage() {
   const { status } = useSession()
@@ -54,7 +73,7 @@ export default function AddressesPage() {
         ? await fetch(`/api/addresses/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         : await fetch('/api/addresses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (res.ok) {
-        toast.success(editing ? 'Address updated!' : 'Address added! 🏠')
+        toast.success(editing ? 'Address updated' : 'Address added')
         setShowForm(false)
         reload()
       } else {
@@ -80,87 +99,96 @@ export default function AddressesPage() {
 
   const f = (k: keyof typeof EMPTY, v: string | boolean) => setForm(p => ({ ...p, [k]: v }))
 
-  if (loading) return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
-
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">🏠 Addresses</h1>
-        <button
-          onClick={openAdd}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md hover:-translate-y-0.5 transition-all text-sm"
-        >
-          + Add Address
-        </button>
-      </div>
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader
+        title="Addresses"
+        actions={
+          <Button onClick={openAdd}>
+            <Plus className="h-4 w-4" strokeWidth={2} />
+            Add Address
+          </Button>
+        }
+      />
 
-      {/* Form */}
       {showForm && (
-        <div className="bg-white rounded-2xl shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-5">{editing ? '✏️ Edit Address' : '+ New Address'}</h2>
-          <form onSubmit={handleSave} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[
-              { key: 'recipientName', label: 'Recipient Name', required: true, col: 'sm:col-span-2' },
-              { key: 'line1', label: 'Address Line 1', required: true, col: 'sm:col-span-2' },
-              { key: 'line2', label: 'Address Line 2 (optional)', required: false, col: 'sm:col-span-2' },
-              { key: 'city', label: 'City', required: true },
-              { key: 'state', label: 'State / Province (optional)', required: false },
-              { key: 'postalCode', label: 'Postal Code', required: true },
-              { key: 'country', label: 'Country', required: true },
-              { key: 'phone', label: 'Phone', required: true },
-            ].map(({ key, label, required, col }) => (
+        <div className="mb-6 rounded-lg border border-border bg-surface p-6">
+          <h2 className="mb-5 text-lg font-bold text-foreground">{editing ? 'Edit Address' : 'New Address'}</h2>
+          <form onSubmit={handleSave} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {FIELDS.map(({ key, label, required, col }) => (
               <div key={key} className={col ?? ''}>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
-                <input
+                <label className="mb-1 block text-sm font-medium text-foreground">{label}</label>
+                <Input
                   type="text"
-                  value={form[key as keyof typeof EMPTY] as string}
-                  onChange={e => f(key as keyof typeof EMPTY, e.target.value)}
+                  value={form[key] as string}
+                  onChange={e => f(key, e.target.value)}
                   required={required}
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
                 />
               </div>
             ))}
-            <div className="sm:col-span-2 flex items-center gap-2">
-              <input id="default" type="checkbox" checked={form.isDefault} onChange={e => f('isDefault', e.target.checked)} className="w-4 h-4 accent-indigo-600" />
-              <label htmlFor="default" className="text-sm font-semibold text-gray-700 cursor-pointer">Set as default address</label>
+            <div className="flex items-center gap-2 sm:col-span-2">
+              <input id="default" type="checkbox" checked={form.isDefault} onChange={e => f('isDefault', e.target.checked)} className="h-4 w-4 accent-primary" />
+              <label htmlFor="default" className="cursor-pointer text-sm font-medium text-foreground">Set as default address</label>
             </div>
-            <div className="sm:col-span-2 flex gap-3 pt-2">
-              <button type="submit" disabled={saving} className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all disabled:opacity-70 text-sm">
-                {saving ? '⏳ Saving…' : '✅ Save'}
-              </button>
-              <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2.5 border-2 border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 text-sm">Cancel</button>
+            <div className="flex gap-3 pt-2 sm:col-span-2">
+              <Button type="submit" disabled={saving}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Address list */}
-      {addresses.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-md text-center py-16 px-6">
-          <p className="text-5xl mb-4">🏠</p>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">No addresses saved</h2>
-          <p className="text-gray-500">Add an address to speed up checkout.</p>
+      {loading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-lg" />
+          ))}
         </div>
+      ) : addresses.length === 0 ? (
+        <EmptyState icon={MapPin} title="No addresses saved" description="Add an address to speed up checkout." />
       ) : (
         <div className="space-y-4">
           {addresses.map(addr => (
-            <div key={addr.id} className={`bg-white rounded-2xl shadow-md p-5 border-2 ${addr.isDefault ? 'border-indigo-400' : 'border-transparent'}`}>
+            <div
+              key={addr.id}
+              className={cn(
+                'rounded-lg border bg-surface p-5',
+                addr.isDefault ? 'border-primary/60' : 'border-border'
+              )}
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="text-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-bold text-gray-800">{addr.recipientName}</span>
-                    {addr.isDefault && <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs font-semibold rounded-full">Default</span>}
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-bold text-foreground">{addr.recipientName}</span>
+                    {addr.isDefault && <Badge variant="outline" className="text-muted-foreground">Default</Badge>}
                   </div>
-                  <p className="text-gray-600">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
-                  <p className="text-gray-600">{addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}</p>
-                  <p className="text-gray-600">{addr.country} · {addr.phone}</p>
+                  <p className="text-muted-foreground">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
+                  <p className="text-muted-foreground">{addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}</p>
+                  <p className="text-muted-foreground">{addr.country} · {addr.phone}</p>
                 </div>
-                <div className="flex flex-col gap-1.5 shrink-0">
+                <div className="flex shrink-0 flex-col gap-1.5">
                   {!addr.isDefault && (
-                    <button onClick={() => handleSetDefault(addr.id)} className="text-xs px-3 py-1.5 text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 font-semibold transition-colors">Set default</button>
+                    <Button variant="outline" size="sm" onClick={() => handleSetDefault(addr.id)}>
+                      <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
+                      Set default
+                    </Button>
                   )}
-                  <button onClick={() => openEdit(addr)} className="text-xs px-3 py-1.5 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 font-semibold transition-colors">✏️ Edit</button>
-                  <button onClick={() => handleDelete(addr.id)} className="text-xs px-3 py-1.5 text-red-500 border border-red-200 rounded-lg hover:bg-red-50 font-semibold transition-colors">🗑️ Delete</button>
+                  <Button variant="outline" size="sm" onClick={() => openEdit(addr)}>
+                    <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(addr.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                    Delete
+                  </Button>
                 </div>
               </div>
             </div>

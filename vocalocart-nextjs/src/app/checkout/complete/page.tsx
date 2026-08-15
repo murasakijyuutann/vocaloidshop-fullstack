@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { toast } from 'sonner'
+import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 function CheckoutCompleteContent() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { clearCart } = useCart()
@@ -31,7 +33,6 @@ function CheckoutCompleteContent() {
       return
     }
 
-    // Finalize the order server-side
     fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -57,49 +58,40 @@ function CheckoutCompleteContent() {
 
   if (orderState === 'loading') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="text-5xl animate-spin">⏳</div>
-        <p className="text-gray-600 text-lg font-medium">Confirming your payment…</p>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" strokeWidth={1.5} />
+        <p className="text-lg font-medium text-foreground">Confirming your payment…</p>
       </div>
     )
   }
 
   if (orderState === 'error') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4 text-center">
-        <div className="text-6xl">❌</div>
-        <h1 className="text-2xl font-bold text-gray-800">Something went wrong</h1>
-        <p className="text-gray-500">Your payment may have processed, but we could not confirm the order. Please contact support.</p>
-        <button
-          onClick={() => router.push('/orders')}
-          className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all"
-        >
-          View My Orders
-        </button>
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 px-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full border border-destructive/30 bg-surface">
+          <XCircle className="h-8 w-8 text-destructive" strokeWidth={1.5} />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Your payment may have processed, but we could not confirm the order. Please contact support.
+        </p>
+        <Button onClick={() => router.push('/orders')}>View my orders</Button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4 text-center page-enter">
-      <div className="text-7xl">🎉</div>
-      <h1 className="text-3xl font-bold text-gray-800">Order Confirmed!</h1>
-      <p className="text-gray-500 text-lg">
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 px-4 text-center page-enter">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border bg-surface">
+        <CheckCircle2 className="h-8 w-8 text-foreground" strokeWidth={1.5} />
+      </div>
+      <h1 className="text-3xl font-bold tracking-tight text-foreground">Order confirmed</h1>
+      <p className="max-w-sm text-sm text-muted-foreground">
         Thank you for your purchase. Order #{orderId} is being processed.
       </p>
       <div className="flex gap-3">
-        <button
-          onClick={() => router.push('/orders')}
-          className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all"
-        >
-          View Orders
-        </button>
-        <button
-          onClick={() => router.push('/')}
-          className="px-6 py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-indigo-400 transition-all"
-        >
-          Continue Shopping
-        </button>
+        <Button onClick={() => router.push('/orders')}>View orders</Button>
+        <Button variant="outline" onClick={() => router.push('/')}>Continue shopping</Button>
       </div>
     </div>
   )
@@ -107,7 +99,13 @@ function CheckoutCompleteContent() {
 
 export default function CheckoutCompletePage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-64 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" strokeWidth={1.5} />
+        </div>
+      }
+    >
       <CheckoutCompleteContent />
     </Suspense>
   )

@@ -3,6 +3,14 @@ import { useEffect, useState, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { ClipboardList, Plus, X, Upload, Loader2, Pencil, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
+import { PageHeader } from '@/components/PageHeader'
+import { cn } from '@/lib/utils'
 
 interface Category { id: number; name: string }
 interface Product {
@@ -145,126 +153,149 @@ export default function AdminProductsPage() {
   }
 
   if (status === 'loading' || loading) {
-    return <div className="flex justify-center items-center min-h-64 text-5xl animate-spin">⏳</div>
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        <Skeleton className="mb-8 h-9 w-56" />
+        <Skeleton className="h-96 w-full rounded-lg" />
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 page-enter">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">🛍️ Products</h1>
-          <p className="text-gray-500 mt-1">{products.length} products</p>
-        </div>
-        <div className="flex gap-3">
-          <button onClick={() => router.push('/admin/orders')} className="px-4 py-2.5 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-indigo-400 transition-all text-sm">
-            📋 Orders
-          </button>
-          <button onClick={() => { setShowForm(s => !s); setEditId(null); setForm(emptyForm) }}
-            className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all text-sm">
-            {showForm && !editId ? '✕ Cancel' : '+ Add Product'}
-          </button>
-        </div>
-      </div>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 page-enter">
+      <PageHeader
+        title="Products"
+        description={`${products.length} products`}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => router.push('/admin/orders')}>
+              <ClipboardList className="h-4 w-4" strokeWidth={2} />
+              Orders
+            </Button>
+            <Button onClick={() => { setShowForm(s => !s); setEditId(null); setForm(emptyForm) }}>
+              {showForm && !editId ? <X className="h-4 w-4" strokeWidth={2} /> : <Plus className="h-4 w-4" strokeWidth={2} />}
+              {showForm && !editId ? 'Cancel' : 'Add Product'}
+            </Button>
+          </>
+        }
+      />
 
-      {/* Add / Edit form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-5">{editId ? '✏️ Edit Product' : '➕ New Product'}</h2>
-          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+        <form onSubmit={handleSubmit} className="mb-8 rounded-lg border border-border bg-surface p-6">
+          <h2 className="mb-5 text-lg font-bold text-foreground">{editId ? 'Edit Product' : 'New Product'}</h2>
+          <div className="mb-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Name *</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Product name" />
+              <label className="mb-1 block text-sm font-medium text-foreground">Name *</label>
+              <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Product name" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Price (¥) *</label>
-              <input type="number" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g. 3000" />
+              <label className="mb-1 block text-sm font-medium text-foreground">Price (¥) *</label>
+              <Input type="number" min="0" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="e.g. 3000" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Stock *</label>
-              <input type="number" min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g. 50" />
+              <label className="mb-1 block text-sm font-medium text-foreground">Stock *</label>
+              <Input type="number" min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} placeholder="e.g. 50" />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Category *</label>
-              <select value={form.categoryId} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
-                <option value="">Select category</option>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <label className="mb-1 block text-sm font-medium text-foreground">Category *</label>
+              <Select value={form.categoryId} onValueChange={v => setForm(f => ({ ...f, categoryId: v }))}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(c => (
+                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Image</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">Image</label>
               <div className="flex gap-2">
-                <input value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
-                  className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="https://... or upload →" />
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  className="px-3 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 text-sm font-medium transition-colors disabled:opacity-50 whitespace-nowrap">
-                  {uploading ? '⏳' : '📁 Upload'}
-                </button>
+                <Input
+                  value={form.imageUrl}
+                  onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
+                  placeholder="https://... or upload →"
+                  className="flex-1"
+                />
+                <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <Upload className="h-4 w-4" strokeWidth={2} />}
+                  Upload
+                </Button>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </div>
               {form.imageUrl && (
-                <img src={form.imageUrl} alt="preview" className="mt-2 h-20 w-20 object-cover rounded-lg border border-gray-200" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.imageUrl} alt="preview" className="mt-2 h-20 w-20 rounded-md border border-border object-cover" />
               )}
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
-              <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none" placeholder="Optional description…" />
+              <label className="mb-1 block text-sm font-medium text-foreground">Description</label>
+              <Textarea
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                rows={3}
+                placeholder="Optional description…"
+              />
             </div>
           </div>
           <div className="flex gap-3">
-            <button type="button" onClick={handleCancel} className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-gray-400 transition-all">Cancel</button>
-            <button type="submit" disabled={saving}
-              className="px-6 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-md transition-all disabled:opacity-60">
-              {saving ? '⏳ Saving…' : editId ? '✅ Update' : '➕ Create'}
-            </button>
+            <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
+              {saving ? 'Saving…' : editId ? 'Update' : 'Create'}
+            </Button>
           </div>
         </form>
       )}
 
-      {/* Products table */}
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-border bg-surface">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-100">
-            <tr>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Product</th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-700">Category</th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-700">Price</th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-700">Stock</th>
-              <th className="px-4 py-3 text-center font-semibold text-gray-700">Actions</th>
+          <thead>
+            <tr className="border-b border-border">
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Product</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">Category</th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">Price</th>
+              <th className="px-4 py-3 text-right font-medium text-muted-foreground">Stock</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-border">
             {products.map(p => (
-              <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={p.id} className="transition-colors hover:bg-accent">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 overflow-hidden shrink-0">
-                      {p.imageUrl
-                        ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                        : <span className="w-full h-full flex items-center justify-center text-lg">🎵</span>}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                      {p.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-bold text-muted-foreground/40">VC</span>
+                      )}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-800 truncate max-w-[200px]">{p.name}</p>
-                      <p className="text-gray-400 text-xs truncate max-w-[200px]">{p.description ?? '—'}</p>
+                      <p className="max-w-50 truncate font-medium text-foreground">{p.name}</p>
+                      <p className="max-w-50 truncate text-xs text-muted-foreground">{p.description ?? '—'}</p>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{p.category.name}</td>
-                <td className="px-4 py-3 text-right font-semibold text-gray-800">¥{p.price.toLocaleString()}</td>
+                <td className="px-4 py-3 text-muted-foreground">{p.category.name}</td>
+                <td className="px-4 py-3 text-right font-semibold text-secondary">¥{p.price.toLocaleString()}</td>
                 <td className="px-4 py-3 text-right">
-                  <span className={`font-semibold ${p.stock === 0 ? 'text-red-500' : p.stock < 5 ? 'text-orange-500' : 'text-gray-700'}`}>
+                  <span className={cn('font-medium', p.stock === 0 ? 'text-destructive' : p.stock < 5 ? 'text-foreground' : 'text-muted-foreground')}>
                     {p.stock}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-center gap-2">
-                    <button onClick={() => handleEdit(p)} className="px-3 py-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg text-xs font-semibold transition-colors">Edit</button>
-                    <button onClick={() => handleDelete(p.id, p.name)} className="px-3 py-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-xs font-semibold transition-colors">Delete</button>
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(p)}>
+                      <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(p.id, p.name)}>
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+                      Delete
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -272,7 +303,7 @@ export default function AdminProductsPage() {
           </tbody>
         </table>
         {products.length === 0 && (
-          <div className="text-center py-16 text-gray-400">No products yet. Add your first one above.</div>
+          <div className="py-16 text-center text-muted-foreground">No products yet. Add your first one above.</div>
         )}
       </div>
     </div>

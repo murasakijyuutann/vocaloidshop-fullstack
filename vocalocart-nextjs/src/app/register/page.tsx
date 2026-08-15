@@ -3,6 +3,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { User, Mail, Lock, Phone, Cake, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -38,7 +42,7 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        toast.success('Account created! Please sign in 🎉')
+        toast.success('Account created — please sign in')
         router.push('/login')
       } else {
         if (res.status === 409) setErrors({ email: 'Email already registered' })
@@ -50,126 +54,140 @@ export default function RegisterPage() {
   }
 
   const pwStrength = form.password.length === 0 ? 0 : form.password.length < 6 ? 1 : form.password.length < 10 ? 2 : 3
-  const strengthColors = ['', 'bg-red-400', 'bg-yellow-400', 'bg-green-400']
+  const strengthColors = ['', 'bg-destructive', 'bg-muted-foreground', 'bg-foreground']
   const strengthLabels = ['', 'Weak', 'Fair', 'Strong']
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-4 py-10">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 sm:p-10">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-3">✨</div>
-          <h1 className="text-3xl font-bold text-gray-800">Create Account</h1>
-          <p className="text-gray-500 mt-1">Join VocaloCart today</p>
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background p-4 py-10 page-enter">
+      <div className="w-full max-w-md rounded-lg border border-border bg-surface p-8 sm:p-10">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
+            VC
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">Create account</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Join VocaloCart today</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">👤</span>
-              <input
+              <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type="text"
                 value={form.name}
                 onChange={e => set('name', e.target.value)}
                 placeholder="Hatsune Miku"
-                className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl text-sm focus:outline-none transition-colors ${errors.name ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}
+                className={cn('pl-9', errors.name && 'border-destructive')}
               />
             </div>
-            {errors.name && <p className="text-red-500 text-xs mt-1">⚠️ {errors.name}</p>}
+            {errors.name && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                {errors.name}
+              </p>
+            )}
           </div>
 
-          {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">📧</span>
-              <input
+              <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type="email"
                 value={form.email}
                 onChange={e => set('email', e.target.value)}
                 placeholder="miku@vocaloid.jp"
-                className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl text-sm focus:outline-none transition-colors ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}
+                className={cn('pl-9', errors.email && 'border-destructive')}
               />
             </div>
-            {errors.email && <p className="text-red-500 text-xs mt-1">⚠️ {errors.email}</p>}
+            {errors.email && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                {errors.email}
+              </p>
+            )}
           </div>
 
-          {/* Password */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🔒</span>
-              <input
+              <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type={showPw ? 'text' : 'password'}
                 value={form.password}
                 onChange={e => set('password', e.target.value)}
                 placeholder="At least 8 characters"
-                className={`w-full pl-10 pr-12 py-3 border-2 rounded-xl text-sm focus:outline-none transition-colors ${errors.password ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'}`}
+                className={cn('pl-9 pr-9', errors.password && 'border-destructive')}
               />
-              <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-500">
-                {showPw ? '🙈' : '👁️'}
+              <button
+                type="button"
+                onClick={() => setShowPw(v => !v)}
+                aria-label={showPw ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showPw ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
               </button>
             </div>
             {form.password.length > 0 && (
               <div className="mt-2 flex items-center gap-2">
-                {[1,2,3].map(i => (
-                  <div key={i} className="flex-1 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                    <div className={`h-full transition-all ${i <= pwStrength ? strengthColors[pwStrength] : ''}`} />
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                    <div className={cn('h-full transition-all', i <= pwStrength && strengthColors[pwStrength])} />
                   </div>
                 ))}
-                <span className="text-xs text-gray-500">{strengthLabels[pwStrength]}</span>
+                <span className="text-xs text-muted-foreground">{strengthLabels[pwStrength]}</span>
               </div>
             )}
-            {errors.password && <p className="text-red-500 text-xs mt-1">⚠️ {errors.password}</p>}
+            {errors.password && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" strokeWidth={2} />
+                {errors.password}
+              </p>
+            )}
           </div>
 
-          {/* Phone (optional) */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Phone <span className="font-normal text-gray-400 text-xs bg-gray-100 px-2 py-0.5 rounded-full">optional</span>
+            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">
+              Phone <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">optional</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">📱</span>
-              <input
+              <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type="tel"
                 value={form.phone}
                 onChange={e => set('phone', e.target.value)}
                 placeholder="+81 90-0000-0000"
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
+                className="pl-9"
               />
             </div>
           </div>
 
-          {/* Birthday (optional) */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-              Birthday <span className="font-normal text-gray-400 text-xs bg-gray-100 px-2 py-0.5 rounded-full">optional</span>
+            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">
+              Birthday <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">optional</span>
             </label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">🎂</span>
-              <input
+              <Cake className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
+              <Input
                 type="date"
                 value={form.birthday}
                 onChange={e => set('birthday', e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl text-sm bg-gray-50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors"
+                className="pl-9"
               />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none text-base mt-2"
-          >
-            {loading ? '⏳ Creating account…' : '✨ Create Account'}
-          </button>
+          <Button type="submit" disabled={loading} className="mt-2 w-full">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
+            {loading ? 'Creating account…' : 'Create account'}
+          </Button>
         </form>
 
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <Link href="/login" className="text-indigo-600 font-semibold hover:text-purple-600 transition-colors">
-            Sign in →
+          <Link href="/login" className="font-medium text-secondary hover:underline">
+            Sign in
           </Link>
         </p>
       </div>
