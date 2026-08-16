@@ -2,7 +2,7 @@
 
 Tracks actual execution against the [recommended order](./vocalocart-task-audit.md#recommended-execution-order) from the task audit. Each entry lists what changed, why, and how it was verified. Update this file as further steps are executed.
 
-**Status: 7 of 14 steps complete.**
+**Status: 14 of 14 steps complete.**
 
 ---
 
@@ -65,25 +65,74 @@ Extracted the shipping-threshold and coupon-discount math (previously duplicated
 - `vocalocart-nextjs/src/hooks/use-cart.test.ts` — 4 tests on cart totals.
 - Added a `Unit tests` step to `ci.yml`.
 
-True consumption-tax logic doesn't exist yet (Step 9 below, schema checkpoint) — tax tests will slot into `pricing.ts` once that lands.
+True consumption-tax logic doesn't exist yet as of this step (Step 9 below, schema checkpoint) — tax tests will slot into `pricing.ts` once that lands.
 
 **Verification applied to every step above:** `tsc --noEmit`, `ReadLints` on touched files, and either `npm test` or a dev-server smoke test (`curl` against affected routes) before moving to the next step.
 
----
+### 8. Swap product `<img>` tags for `next/image` — `1.5`
 
-## Remaining (not yet started)
+Converted every raw `<img>` rendering product/order imagery to `next/image`, matching each container's actual sizing: `fill` + a `sizes` prop for the responsive grid/PDP images (`ProductCard`, PDP hero) and cart/checkout/order-history thumbnails (fixed pixel sizes, now with a `relative` wrapper), and explicit `width`/`height` for the two admin-panel thumbnails that aren't in a sized wrapper. Removed the now-unneeded `eslint-disable-next-line @next/next/no-img-element` comments.
 
-| # | Task | Section | Effort | Touches schema? |
-|---|---|---|---|---|
-| 8 | Swap product `<img>` tags for `next/image` | 1.5 | Medium | No |
-| 9 | Add 消費税 (10%) tax line to cart, checkout, and order totals | 1.3 / 2.5 | Medium | Yes (`Order.taxAmount`) |
-| 10 | Add rate limiting to auth, checkout, and search routes | 2.2 | Medium | No |
-| 11 | Add a related-products section on the PDP | 1.2 | Low | No |
-| 12 | Add shipping estimate + return-policy copy near the Add to Cart CTA | 1.2 | Low | No |
-| 13 | Add per-product metadata + JSON-LD (via a segment layout, no full RSC migration) | 1.5 | Medium | No |
-| 14 | Enable Stripe konbini as a payment method | 2.5 | Low | No (verify Stripe account setting) |
+- `vocalocart-nextjs/src/components/ProductCard.tsx`
+- `vocalocart-nextjs/src/app/product/[id]/page.tsx`
+- `vocalocart-nextjs/src/app/cart/page.tsx`
+- `vocalocart-nextjs/src/app/checkout/page.tsx`
+- `vocalocart-nextjs/src/app/orders/page.tsx`
+- `vocalocart-nextjs/src/app/admin/products/page.tsx`
 
-Step 9 needs a go-ahead before starting since it adds a column to `Order`. See the audit's ["Larger, architecture-touching items"](./vocalocart-task-audit.md#larger-architecture-touching-items) and ["Conflict to resolve"](./vocalocart-task-audit.md#conflict-to-resolve-isrssg-27-vs-no-rsc-migration) sections for items intentionally left out of this ordered list.
+### 9. Add 消費税 (10%) tax line to cart, checkout, and order totals — `1.3` / `2.5`
+
+Added `Order.taxAmount` after explicit go-ahead (schema change, per the doc's own "report back before moving on" rule). Tax is 10% of (item subtotal − discount), computed by a new `calculateTax` in `pricing.ts` and floored to the nearest yen; shipping is charged on top and isn't itself taxed. `calculateOrderTotal`'s signature grew a `tax` parameter, threaded through every call site. Both cart and checkout summaries now show a `消費税 (10%)` line, and the order-history expanded view now shows a full subtotal/shipping/coupon/tax/total breakdown per order (shipping and subtotal are derived at render time from the order's line items rather than newly persisted, consistent with how shipping was never persisted before this).
+
+**Incidental but important discovery while adding this migration:** `prisma migrate dev` refused to run, reporting the dev database had drifted from migration history — the `coupon` table and three `order` columns (`coupon_code`, `discount_amount`, `stripe_payment_intent_id`) existed live but were never captured in a migration file (almost certainly applied via `prisma db push` during the original coupon feature work, before this execution log existed). Left unfixed, `prisma migrate deploy` against a fresh production database would have silently produced a database missing the entire coupon feature. Fixed by hand-authoring the missing migration from the actual live schema (verified via `prisma db pull --print`) and marking it applied on the dev DB with `prisma migrate resolve --applied` (no data loss, nothing re-executed), *then* generating the real `taxAmount` migration on top of a now-consistent history. See `docs/vocalocart-deployment-checklist.md` — this directly affects deploy readiness.
+
+- `vocalocart-nextjs/prisma/schema.prisma` (`Order.taxAmount`)
+- `vocalocart-nextjs/prisma/migrations/20260227030000_add_coupon_and_order_payment_fields/` (new — backfilled, not a new schema change)
+- `vocalocart-nextjs/prisma/migrations/20260816045020_add_order_tax_amount/` (new)
+- `vocalocart-nextjs/src/lib/pricing.ts` (`TAX_RATE`, `calculateTax`, `calculateOrderTotal` signature)
+- `vocalocart-nextjs/src/lib/pricing.test.ts` (new `calculateTax` tests, updated `calculateOrderTotal` tests)
+- `vocalocart-nextjs/src/lib/create-order-from-cart.ts`
+- `vocalocart-nextjs/src/app/api/payments/create-intent/route.ts`
+- `vocalocart-nextjs/src/app/cart/page.tsx`
+- `vocalocart-nextjs/src/app/checkout/page.tsx`
+- `vocalocart-nextjs/src/app/orders/page.tsx`
+
+### 10. Add rate limiting to auth, checkout, and search routes — `2.2`
+
+Added a fixed-window in-memory limiter (`src/lib/rate-limit.ts`) wired into the existing `middleware.ts` fast-fail layer, scoped narrowly to exact path+method rather than whole-prefix bans — `POST /api/auth/register` and `POST /api/auth/callback/credentials` (10/min), `POST /api/payments/create-intent` and `POST /api/orders` (20/min), `GET /api/products` (60/min) — so read-only calls like `/api/auth/session` (fired on every page load) are never caught by a limiter meant for brute force. Documented the known tradeoff directly in the code: state is per warm serverless/edge instance, not a shared store, so it blunts single-source abuse but doesn't hold under a distributed attacker; noted the swap-in point (Upstash Redis / Vercel KV) if that's ever needed.
+
+- `vocalocart-nextjs/src/lib/rate-limit.ts` (new)
+- `vocalocart-nextjs/src/lib/rate-limit.test.ts` (new — 4 tests: allow-under-limit, block-over-limit, window-reset via fake timers, independent keys)
+- `vocalocart-nextjs/src/middleware.ts`
+
+### 11. Add a related-products section on the PDP — `1.2`
+
+`GET /api/products/[id]` now also returns up to 4 same-category products (excluding the current one, in-stock first) in a single response — no extra round trip from the page. Rendered as a "You might also like" grid below the main product using the existing shared `ProductCard`.
+
+- `vocalocart-nextjs/src/app/api/products/[id]/route.ts`
+- `vocalocart-nextjs/src/app/product/[id]/page.tsx`
+
+### 12. Add shipping estimate + return-policy copy near the Add to Cart CTA — `1.2`
+
+Added a short shipping-threshold line (reusing `FREE_SHIPPING_THRESHOLD` from `pricing.ts` so it can't drift from the real logic) and a 30-day-returns line directly under the Add to Cart / wishlist buttons on the PDP.
+
+- `vocalocart-nextjs/src/app/product/[id]/page.tsx`
+
+### 13. Add per-product metadata + JSON-LD — `1.5`
+
+Added `src/app/product/[id]/layout.tsx` — a Server Component segment layout wrapping the existing `'use client'` PDP unchanged, per the "no RSC migration" constraint. It exports `generateMetadata` (per-product `<title>`/description/OG tags) and renders a `schema.org` `Product` JSON-LD `<script>` block. Both do their own small server-side product lookup rather than touching the client page's data flow. Verified server-rendered output directly with `curl` (title tag and JSON-LD both present in the HTML).
+
+- `vocalocart-nextjs/src/app/product/[id]/layout.tsx` (new)
+
+### 14. Enable Stripe konbini as a payment method — `2.5`
+
+Confirmed the account-side requirement first: since Stripe's August 2023 payment-methods migration, `automatic_payment_methods` defaults to `true` when `payment_method_types` isn't set, so eligible methods (including konbini, JPY-only) surface automatically once enabled in the Stripe Dashboard — no code was strictly required. Made it explicit anyway rather than relying on an implicit API default, and set a Japan-appropriate `product_description` for the convenience-store receipt instead of Stripe's generic placeholder.
+
+- `vocalocart-nextjs/src/app/api/payments/create-intent/route.ts`
+
+**Remaining external step (not IDE-executable):** konbini must still be turned on in the Stripe Dashboard (Settings → Payment methods) for it to actually appear to customers — flagged in `docs/vocalocart-deployment-checklist.md`.
+
+**Verification applied to steps 8–14:** `tsc --noEmit`, `npm run lint`, `npm test` (26 tests passing, up from 19), and a full `npm run build` after every step; live-verified the related-products API shape, PDP metadata/JSON-LD HTML output, and the `taxAmount` column via direct Prisma queries against the dev database with a running dev server.
 
 ---
 

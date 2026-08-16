@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useRef } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -225,8 +226,13 @@ export default function AdminProductsPage() {
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </div>
               {form.imageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={form.imageUrl} alt="preview" className="mt-2 h-20 w-20 rounded-md border border-border object-cover" />
+                <Image
+                  src={form.imageUrl}
+                  alt="preview"
+                  width={80}
+                  height={80}
+                  className="mt-2 h-20 w-20 rounded-md border border-border object-cover"
+                />
               )}
             </div>
             <div className="sm:col-span-2">
@@ -265,10 +271,9 @@ export default function AdminProductsPage() {
               <tr key={p.id} className="transition-colors hover:bg-accent">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
                       {p.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
+                        <Image src={p.imageUrl} alt={p.name} fill sizes="40px" className="object-cover" />
                       ) : (
                         <span className="text-xs font-bold text-muted-foreground/40">VC</span>
                       )}

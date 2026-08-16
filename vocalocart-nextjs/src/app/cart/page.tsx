@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
@@ -12,7 +13,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { PriceTag } from '@/components/PriceTag'
 import { QuantityStepper } from '@/components/QuantityStepper'
 import { EmptyState } from '@/components/EmptyState'
-import { calculateShipping } from '@/lib/pricing'
+import { calculateShipping, calculateTax } from '@/lib/pricing'
 
 export default function CartPage() {
   const { status } = useSession()
@@ -60,7 +61,8 @@ export default function CartPage() {
 
   const subtotal = totalPrice()
   const shipping = subtotal > 0 ? calculateShipping(subtotal) : 0
-  const total = subtotal + shipping
+  const tax = calculateTax(subtotal, 0)
+  const total = subtotal + shipping + tax
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
@@ -106,13 +108,14 @@ export default function CartPage() {
                   key={item.id}
                   className="grid grid-cols-[80px_1fr] items-center gap-4 py-4 sm:grid-cols-[96px_1fr_auto]"
                 >
-                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted sm:h-24 sm:w-24">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted sm:h-24 sm:w-24">
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={item.imageUrl}
                         alt={item.name}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="96px"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
@@ -174,6 +177,10 @@ export default function CartPage() {
               {shipping > 0 && (
                 <p className="text-xs text-muted-foreground/70">Free shipping on orders ¥5,000+</p>
               )}
+              <div className="flex justify-between text-muted-foreground">
+                <span>消費税 (10%)</span>
+                <span>¥{tax.toLocaleString()}</span>
+              </div>
             </div>
             <div className="mt-4 flex justify-between border-t border-border pt-4">
               <span className="font-semibold text-foreground">Total</span>

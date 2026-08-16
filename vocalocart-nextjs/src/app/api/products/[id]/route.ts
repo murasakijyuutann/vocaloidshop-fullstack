@@ -21,7 +21,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       include: { category: true },
     })
     if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
-    return NextResponse.json({ product })
+
+    // Related products: same category, excluding this one. In-stock items
+    // surface first so a related product isn't just an immediate dead end.
+    const relatedProducts = await prisma.product.findMany({
+      where: { categoryId: product.categoryId, id: { not: product.id } },
+      include: { category: true },
+      orderBy: [{ stock: 'desc' }, { createdAt: 'desc' }],
+      take: 4,
+    })
+
+    return NextResponse.json({ product, relatedProducts })
   } catch {
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
   }

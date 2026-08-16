@@ -119,6 +119,10 @@ model Order {
   stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
   discountAmount        Int     @default(0) @map("discount_amount")
   couponCode            String? @map("coupon_code")
+  // 消費税 (Japan consumption tax), 10% of (item subtotal - discount).
+  // Stored rather than only recomputed so a historical order's tax stays
+  // accurate even if TAX_RATE ever changes.
+  taxAmount             Int     @default(0) @map("tax_amount")
 
   user       User        @relation(fields: [userId], references: [id])
   orderItems OrderItem[]

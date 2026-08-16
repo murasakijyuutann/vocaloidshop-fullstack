@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -13,6 +14,7 @@ import { PriceTag } from '@/components/PriceTag'
 import { OrderStatusBadge } from '@/components/OrderStatusBadge'
 import { cn } from '@/lib/utils'
 import type { OrderStatus } from '@/lib/order-status'
+import { calculateShipping } from '@/lib/pricing'
 
 interface OrderItem {
   id: number
@@ -28,6 +30,9 @@ interface Order {
   id: number
   status: OrderStatus
   totalAmount: number
+  discountAmount: number
+  taxAmount: number
+  couponCode?: string | null
   orderedAt: string
   shipRecipientName?: string | null
   orderItems: OrderItem[]
@@ -121,10 +126,9 @@ export default function OrdersPage() {
                   <div className="mb-4 divide-y divide-border">
                     {order.orderItems.map(item => (
                       <div key={item.id} className="flex items-center gap-4 py-3">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                        <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
                           {item.product.imageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={item.product.imageUrl} alt={item.product.name} className="h-full w-full object-cover" />
+                            <Image src={item.product.imageUrl} alt={item.product.name} fill sizes="48px" className="object-cover" />
                           ) : (
                             <span className="text-xs font-bold text-muted-foreground/40">VC</span>
                           )}
@@ -139,6 +143,34 @@ export default function OrdersPage() {
                       </div>
                     ))}
                   </div>
+
+                  {(() => {
+                    const itemsSubtotal = order.orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
+                    const shipping = calculateShipping(itemsSubtotal)
+                    return (
+                      <div className="mb-4 space-y-1.5 border-t border-border pt-3 text-sm">
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Subtotal</span><span>¥{itemsSubtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Shipping</span>
+                          <span>{shipping === 0 ? 'Free' : `¥${shipping.toLocaleString()}`}</span>
+                        </div>
+                        {order.discountAmount > 0 && (
+                          <div className="flex justify-between text-muted-foreground">
+                            <span>Coupon{order.couponCode ? ` (${order.couponCode})` : ''}</span>
+                            <span>−¥{order.discountAmount.toLocaleString()}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>消費税 (10%)</span><span>¥{order.taxAmount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-border pt-1.5 font-semibold text-foreground">
+                          <span>Total</span><span>¥{order.totalAmount.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   {(order.status === 'PAYMENT_RECEIVED' || order.status === 'PROCESSING') && (
                     <Button variant="outline" size="sm" onClick={() => handleCancel(order.id)}>

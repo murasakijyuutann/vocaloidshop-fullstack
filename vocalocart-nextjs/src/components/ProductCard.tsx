@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import type { LucideIcon } from "lucide-react"
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -37,11 +38,12 @@ export function ProductCard({ product, onAddToCart, cornerAction }: ProductCardP
     <div className="group flex flex-col overflow-hidden rounded-lg border border-border bg-surface transition-colors hover:border-muted-foreground/40">
       <div className="relative aspect-square bg-muted">
         {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.name}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+            className="object-cover"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

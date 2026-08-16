@@ -10,6 +10,20 @@ export function calculateShipping(subtotal: number): number {
   return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST
 }
 
+/** 消費税 (Japan consumption tax) rate. */
+export const TAX_RATE = 0.1
+
+/**
+ * 消費税 on the item subtotal net of any discount (not shipping — shipping
+ * is charged separately and isn't part of the taxable goods price here).
+ * Rounded down to the nearest yen, matching how yen amounts have no
+ * subdivision to round to in the first place.
+ */
+export function calculateTax(subtotal: number, discount: number): number {
+  const taxableBase = Math.max(0, subtotal - discount)
+  return Math.floor(taxableBase * TAX_RATE)
+}
+
 export interface CouponLike {
   type: 'PERCENTAGE' | 'FIXED'
   value: number
@@ -43,6 +57,6 @@ export function calculateDiscount(coupon: CouponLike, subtotal: number, now: Dat
 }
 
 /** Final order total — clamped at 0 so shipping/discount can't go negative. */
-export function calculateOrderTotal(subtotal: number, shipping: number, discount: number): number {
-  return Math.max(0, subtotal + shipping - discount)
+export function calculateOrderTotal(subtotal: number, shipping: number, discount: number, tax: number): number {
+  return Math.max(0, subtotal + shipping - discount + tax)
 }

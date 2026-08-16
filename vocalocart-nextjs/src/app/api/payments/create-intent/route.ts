@@ -3,7 +3,7 @@ import { createHash } from 'crypto'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
-import { calculateShipping, calculateDiscount, calculateOrderTotal } from '@/lib/pricing'
+import { calculateShipping, calculateDiscount, calculateTax, calculateOrderTotal } from '@/lib/pricing'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -61,7 +61,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const total = calculateOrderTotal(subtotal, shipping, discount)
+    const tax = calculateTax(subtotal, discount)
+    const total = calculateOrderTotal(subtotal, shipping, discount, tax)
 
     // Deterministic idempotency key: same user + same cart contents + same
     // coupon + same total always hashes to the same key. A double-click, a
@@ -86,10 +87,23 @@ export async function POST(request: NextRequest) {
     // addressId is stashed in metadata (not used by this route) so the
     // webhook's safety-net order-creation path can attach shipping info if
     // it ever needs to create the order itself.
+    //
+    // automatic_payment_methods is spelled out explicitly (rather than relying
+    // on it being Stripe's API default since the 2023-08 payment-methods
+    // migration) so konbini — a Japan-specific, cash-based method paid at a
+    // convenience store — is picked up automatically once enabled in the
+    // Stripe Dashboard, with no further code change. It only ever appears for
+    // JPY PaymentIntents, which this checkout always is. `product_description`
+    // is optional but gives the convenience-store receipt a real label
+    // instead of Stripe's generic placeholder.
     const paymentIntent = await stripe.paymentIntents.create(
       {
         amount: total,
         currency: 'jpy',
+        automatic_payment_methods: { enabled: true },
+        payment_method_options: {
+          konbini: { product_description: 'VocaloCart注文' },
+        },
         metadata: {
           userId: toMetadataString(userId),
           addressId: toMetadataString(addressId),
@@ -106,6 +120,7 @@ export async function POST(request: NextRequest) {
       discount,
       subtotal,
       shipping,
+      tax,
     })
   } catch (error) {
     console.error('create-intent error:', error)

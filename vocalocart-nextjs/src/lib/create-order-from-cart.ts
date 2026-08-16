@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { calculateShipping, calculateDiscount, calculateOrderTotal } from '@/lib/pricing'
+import { calculateShipping, calculateDiscount, calculateTax, calculateOrderTotal } from '@/lib/pricing'
 
 // Thrown when the authoritative in-transaction stock guard fails — lets
 // callers distinguish "sold out mid-transaction" from any other error.
@@ -84,7 +84,8 @@ export async function createOrderFromCart({
     }
   }
 
-  const totalAmount = calculateOrderTotal(subtotal, shipping, discount)
+  const tax = calculateTax(subtotal, discount)
+  const totalAmount = calculateOrderTotal(subtotal, shipping, discount, tax)
 
   // Create order and decrement stock in a transaction. The decrement is
   // conditioned on `stock >= quantity` in the same atomic statement, so two
@@ -107,6 +108,7 @@ export async function createOrderFromCart({
         userId,
         totalAmount,
         discountAmount: discount,
+        taxAmount: tax,
         couponCode: appliedCoupon?.code ?? null,
         stripePaymentIntentId: paymentIntentId ?? null,
         ...shipFields,

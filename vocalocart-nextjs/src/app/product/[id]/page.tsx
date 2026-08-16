@@ -1,17 +1,20 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle2, XCircle, Heart, ShoppingCart, Loader2, PackageX } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, XCircle, Heart, ShoppingCart, Loader2, PackageX, Truck, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PriceTag } from '@/components/PriceTag'
 import { QuantityStepper } from '@/components/QuantityStepper'
 import { EmptyState } from '@/components/EmptyState'
+import { ProductCard, type ProductCardProduct } from '@/components/ProductCard'
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/pricing'
 
 interface Product {
   id: number
@@ -31,6 +34,7 @@ export default function ProductDetailPage() {
   const addItem = useCart(s => s.addItem)
 
   const [product, setProduct] = useState<Product | null>(null)
+  const [relatedProducts, setRelatedProducts] = useState<ProductCardProduct[]>([])
   const [loading, setLoading] = useState(true)
   const [qty, setQty] = useState(1)
   const [adding, setAdding] = useState(false)
@@ -38,7 +42,10 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetch(`/api/products/${id}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => setProduct(d?.product ?? null))
+      .then(d => {
+        setProduct(d?.product ?? null)
+        setRelatedProducts(d?.relatedProducts ?? [])
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -64,6 +71,16 @@ export default function ProductDetailPage() {
     })
     if (res.ok) toast.success('Added to wishlist')
     else toast.info('Already in wishlist')
+  }
+
+  const handleAddRelatedToCart = async (productId: number) => {
+    if (!session) { toast.info('Please log in to add items to cart'); router.push('/login'); return }
+    try {
+      await addItem(productId)
+      toast.success('Added to cart')
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
+    }
   }
 
   if (loading) {
@@ -119,11 +136,13 @@ export default function ProductDetailPage() {
         {/* Image */}
         <div className="relative aspect-square bg-muted md:aspect-auto">
           {product.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover"
+              fill
+              priority
+              sizes="(min-width: 768px) 50vw, 100vw"
+              className="object-cover"
             />
           ) : (
             <div className="flex h-full min-h-64 w-full items-center justify-center">
@@ -204,8 +223,38 @@ export default function ProductDetailPage() {
               <Heart className="h-4 w-4" strokeWidth={2} />
             </Button>
           </div>
+
+          <div className="mt-5 space-y-2.5 border-t border-border pt-5 text-sm text-muted-foreground">
+            <p className="flex items-start gap-2">
+              <Truck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
+              {product.price >= FREE_SHIPPING_THRESHOLD ? (
+                <span>Free shipping — this item qualifies on its own.</span>
+              ) : (
+                <span>
+                  Standard shipping, or free on orders ¥{FREE_SHIPPING_THRESHOLD.toLocaleString()}+.
+                </span>
+              )}
+            </p>
+            <p className="flex items-start gap-2">
+              <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
+              <span>30-day returns on unopened items. See order history to start a return.</span>
+            </p>
+          </div>
         </div>
       </div>
+
+      {relatedProducts.length > 0 && (
+        <div className="mt-12">
+          <h2 className="mb-4 text-lg font-bold tracking-tight text-foreground">
+            You might also like
+          </h2>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+            {relatedProducts.map(p => (
+              <ProductCard key={p.id} product={p} onAddToCart={handleAddRelatedToCart} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

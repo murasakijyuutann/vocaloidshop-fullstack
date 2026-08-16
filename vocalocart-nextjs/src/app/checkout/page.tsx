@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
@@ -32,7 +33,7 @@ import { PageHeader } from '@/components/PageHeader'
 import { PriceTag } from '@/components/PriceTag'
 import { cn } from '@/lib/utils'
 import { resolveCssColor } from '@/lib/resolve-css-color'
-import { calculateShipping } from '@/lib/pricing'
+import { calculateShipping, calculateTax } from '@/lib/pricing'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -160,7 +161,8 @@ export default function CheckoutPage() {
 
   const subtotal = totalPrice()
   const shipping = calculateShipping(subtotal)
-  const total = Math.max(0, subtotal + shipping - discount)
+  const tax = calculateTax(subtotal, discount)
+  const total = Math.max(0, subtotal + shipping - discount + tax)
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim().toUpperCase()
@@ -289,10 +291,9 @@ export default function CheckoutPage() {
             <div className="divide-y divide-border">
               {items.map(item => (
                 <div key={item.id} className="flex items-center gap-4 py-3">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
                     {item.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                      <Image src={item.imageUrl} alt={item.name} fill sizes="48px" className="object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center">
                         <span className="text-xs font-bold tracking-tight text-muted-foreground/40">VC</span>
@@ -331,6 +332,10 @@ export default function CheckoutPage() {
                   <span>Coupon ({couponCode})</span><span>−¥{discount.toLocaleString()}</span>
                 </div>
               )}
+              <div className="flex justify-between text-muted-foreground">
+                <span>消費税 (10%)</span>
+                <span>¥{tax.toLocaleString()}</span>
+              </div>
             </div>
             <div className="mt-4 flex justify-between border-t border-border pt-4">
               <span className="font-semibold text-foreground">Total</span>
