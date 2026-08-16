@@ -44,6 +44,16 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ---
 
+## Testing
+
+```bash
+npm test           # run once
+npm run test:watch # watch mode
+npm run test:coverage
+```
+
+---
+
 ## Project Structure
 
 ```
@@ -70,6 +80,4 @@ See `.env.example` for all required variables and where to get them.
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [`../docs/vocalocart-deployment-checklist.md`](../docs/vocalocart-deployment-checklist.md) for the full deploy readiness checklist — required env vars, the Stripe webhook, Vercel Blob setup, and the migration strategy decision — before deploying.
