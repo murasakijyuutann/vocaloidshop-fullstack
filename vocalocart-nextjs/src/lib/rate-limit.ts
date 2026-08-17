@@ -1,14 +1,16 @@
-// Naive in-memory fixed-window rate limiter for `middleware.ts`.
+// Naive in-memory fixed-window rate limiter for `proxy.ts` (the renamed
+// `middleware.ts` — Next.js 16 deprecated that convention; proxy now always
+// runs on the Node.js runtime, Edge is no longer an option for it).
 //
-// Known tradeoff: state lives per warm serverless/edge instance, not in a
-// shared store. On Vercel, concurrent invocations can land on different
-// instances, so a distributed attacker could exceed the nominal limit by a
-// multiple of the instance count, and a cold start resets the count to
-// zero. This is still real protection against the common case (a single
-// script hammering one endpoint) and costs nothing to run. If this ever
-// needs to hold under real adversarial traffic, swap the `buckets` Map
-// below for a shared store (Upstash Redis / Vercel KV) — the call sites in
-// `middleware.ts` wouldn't need to change.
+// Known tradeoff: state lives per warm Node.js instance, not in a shared
+// store. On Vercel, concurrent invocations can land on different instances,
+// so a distributed attacker could exceed the nominal limit by a multiple of
+// the instance count, and a cold start resets the count to zero. This is
+// still real protection against the common case (a single script hammering
+// one endpoint) and costs nothing to run. If this ever needs to hold under
+// real adversarial traffic, swap the `buckets` Map below for a shared store
+// (Upstash Redis / Vercel KV) — the call sites in `proxy.ts` wouldn't need
+// to change.
 interface Bucket {
   count: number
   resetAt: number

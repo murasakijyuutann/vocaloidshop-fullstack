@@ -51,7 +51,7 @@ function getClientIp(request: NextRequest): string {
   return request.headers.get('x-real-ip') ?? 'unknown'
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const method = request.method
 
@@ -79,10 +79,9 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next()
   // Note: full JWT verification + admin checks are done inside each route handler
-  // via auth() from '@/lib/auth'. This middleware is a fast-fail for anonymous requests.
+  // via auth() from '@/lib/auth'. This proxy is a fast-fail for anonymous requests.
 }
 
 export const config = {
   matcher: ['/api/:path*'],
 }
-

@@ -111,9 +111,9 @@ vocalocart-nextjs/
 │   │   ├── prisma.ts             # Prisma client singleton
 │   │   ├── pricing.ts            # Shipping/tax/discount math (unit tested)
 │   │   ├── create-order-from-cart.ts  # Shared order-creation transaction
-│   │   ├── rate-limit.ts         # In-memory rate limiter used by middleware
+│   │   ├── rate-limit.ts         # In-memory rate limiter used by proxy.ts
 │   │   └── order-status.ts       # Order status enum + display metadata
-│   ├── middleware.ts             # Auth fast-fail + rate limiting for API routes
+│   ├── proxy.ts                  # Auth fast-fail + rate limiting for API routes (formerly middleware.ts)
 │   └── types/
 │       └── next-auth.d.ts        # Session type augmentation
 ```
@@ -187,7 +187,7 @@ See [`prisma/schema.prisma`](vocalocart-nextjs/prisma/schema.prisma) for the ful
 
 ## API routes
 
-All routes are under `src/app/api/`. Protected routes require a valid session cookie — `src/middleware.ts` fast-fails unauthenticated requests before they reach route handlers, and also rate-limits auth, checkout, and search endpoints.
+All routes are under `src/app/api/`. Protected routes require a valid session cookie — `src/proxy.ts` fast-fails unauthenticated requests before they reach route handlers, and also rate-limits auth, checkout, and search endpoints.
 
 | Method | Route | Description | Auth |
 |--------|-------|-------------|------|
