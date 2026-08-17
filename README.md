@@ -1,5 +1,7 @@
 # VocaloCart
 
+English | [日本語](README.ja.md)
+
 **Full-stack Vocaloid merchandise e-commerce platform.**
 
 Built with Next.js 16 (App Router), Prisma, PostgreSQL, NextAuth.js v5, and Stripe — a single application handling both the storefront and the backend API, migrated from an earlier Spring Boot + Vite/React implementation.
