@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { ORDER_STATUS_META, type OrderStatus } from '@/lib/order-status'
@@ -8,12 +9,22 @@ import { ORDER_STATUS_META, type OrderStatus } from '@/lib/order-status'
  * states get emphasis: canceled uses the destructive token, delivered uses
  * full foreground contrast.
  */
-export function OrderStatusBadge({ status, className }: { status: OrderStatus; className?: string }) {
+export function OrderStatusBadge({
+  status,
+  /** Bypasses translation — used by admin pages, which stay English-only (see i18n plan D2). */
+  label,
+  className,
+}: {
+  status: OrderStatus
+  label?: string
+  className?: string
+}) {
+  const t = useTranslations('OrderStatus')
   const meta = ORDER_STATUS_META[status]
   if (!meta) {
     return (
       <Badge variant="outline" className={cn('text-muted-foreground', className)}>
-        {status}
+        {label ?? status}
       </Badge>
     )
   }
@@ -32,7 +43,7 @@ export function OrderStatusBadge({ status, className }: { status: OrderStatus; c
       )}
     >
       <Icon className="h-3 w-3" strokeWidth={2} />
-      {meta.label}
+      {label ?? t(status)}
     </Badge>
   )
 }

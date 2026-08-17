@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
@@ -28,6 +29,9 @@ interface Product {
 }
 
 export default function ProductDetailPage() {
+  const t = useTranslations('Product')
+  const tc = useTranslations('Common')
+  const format = useFormatter()
   const { id } = useParams<{ id: string }>()
   const { data: session } = useSession()
   const router = useRouter()
@@ -50,36 +54,36 @@ export default function ProductDetailPage() {
   }, [id])
 
   const handleAddToCart = async () => {
-    if (!session) { toast.info('Please log in to add items to cart'); router.push('/login'); return }
+    if (!session) { toast.info(tc('loginToAddCart')); router.push('/login'); return }
     setAdding(true)
     try {
       await addItem(Number(id), qty)
-      toast.success(`Added ${qty}× to cart`)
+      toast.success(t('addedQtyToCart', { qty }))
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
+      toast.error(e instanceof Error ? e.message : tc('addToCartFailed'))
     } finally {
       setAdding(false)
     }
   }
 
   const handleWishlist = async () => {
-    if (!session) { toast.info('Please log in to use wishlist'); return }
+    if (!session) { toast.info(tc('loginToWishlist')); return }
     const res = await fetch('/api/wishlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productId: Number(id) }),
     })
-    if (res.ok) toast.success('Added to wishlist')
-    else toast.info('Already in wishlist')
+    if (res.ok) toast.success(tc('addedToWishlist'))
+    else toast.info(tc('alreadyInWishlist'))
   }
 
   const handleAddRelatedToCart = async (productId: number) => {
-    if (!session) { toast.info('Please log in to add items to cart'); router.push('/login'); return }
+    if (!session) { toast.info(tc('loginToAddCart')); router.push('/login'); return }
     try {
       await addItem(productId)
-      toast.success('Added to cart')
+      toast.success(tc('addedToCart'))
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
+      toast.error(e instanceof Error ? e.message : tc('addToCartFailed'))
     }
   }
 
@@ -107,13 +111,13 @@ export default function ProductDetailPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
         <EmptyState
           icon={PackageX}
-          title="Product not found"
-          description="It may have been removed or the link is incorrect."
+          title={t('notFoundTitle')}
+          description={t('notFoundDescription')}
           action={
             <Button asChild variant="outline">
               <Link href="/">
                 <ArrowLeft className="h-4 w-4" />
-                Back to shop
+                {t('backToShop')}
               </Link>
             </Button>
           }
@@ -129,7 +133,7 @@ export default function ProductDetailPage() {
         className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" strokeWidth={2} />
-        Back to shop
+        {t('backToShop')}
       </Link>
 
       <div className="grid overflow-hidden rounded-lg border border-border bg-surface md:grid-cols-2">
@@ -175,19 +179,19 @@ export default function ProductDetailPage() {
             {product.stock > 0 ? (
               <span className="flex items-center gap-1.5 text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
-                In stock ({product.stock} available)
+                {t('inStock', { count: product.stock })}
               </span>
             ) : (
               <span className="flex items-center gap-1.5 text-destructive">
                 <XCircle className="h-4 w-4" strokeWidth={2} />
-                Out of stock
+                {t('outOfStock')}
               </span>
             )}
           </div>
 
           {product.stock > 0 && (
             <div className="mb-6 flex items-center gap-3">
-              <span className="text-sm font-medium text-muted-foreground">Qty</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('qty')}</span>
               <QuantityStepper value={qty} max={product.stock} onChange={setQty} />
             </div>
           )}
@@ -202,14 +206,14 @@ export default function ProductDetailPage() {
               {adding ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
-                  Adding…
+                  {t('adding')}
                 </>
               ) : product.stock === 0 ? (
-                'Out of stock'
+                t('outOfStock')
               ) : (
                 <>
                   <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-                  Add to cart
+                  {t('addToCart')}
                 </>
               )}
             </Button>
@@ -217,8 +221,8 @@ export default function ProductDetailPage() {
               size="lg"
               variant="outline"
               onClick={handleWishlist}
-              aria-label="Add to wishlist"
-              title="Add to wishlist"
+              aria-label={tc('addToWishlist')}
+              title={tc('addToWishlist')}
             >
               <Heart className="h-4 w-4" strokeWidth={2} />
             </Button>
@@ -228,16 +232,16 @@ export default function ProductDetailPage() {
             <p className="flex items-start gap-2">
               <Truck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
               {product.price >= FREE_SHIPPING_THRESHOLD ? (
-                <span>Free shipping — this item qualifies on its own.</span>
+                <span>{t('freeShippingQualifies')}</span>
               ) : (
                 <span>
-                  Standard shipping, or free on orders ¥{FREE_SHIPPING_THRESHOLD.toLocaleString()}+.
+                  {t('standardShipping', { amount: format.number(FREE_SHIPPING_THRESHOLD) })}
                 </span>
               )}
             </p>
             <p className="flex items-start gap-2">
               <RotateCcw className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} />
-              <span>30-day returns on unopened items. See order history to start a return.</span>
+              <span>{t('returns')}</span>
             </p>
           </div>
         </div>
@@ -246,7 +250,7 @@ export default function ProductDetailPage() {
       {relatedProducts.length > 0 && (
         <div className="mt-12">
           <h2 className="mb-4 text-lg font-bold tracking-tight text-foreground">
-            You might also like
+            {t('relatedTitle')}
           </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
             {relatedProducts.map(p => (

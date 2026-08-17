@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader } from '@/components/PageHeader'
 import { OrderStatusBadge } from '@/components/OrderStatusBadge'
-import { ORDER_STATUSES, ORDER_STATUS_META, type OrderStatus } from '@/lib/order-status'
+import { ORDER_STATUSES, ORDER_STATUS_LABELS_EN, type OrderStatus } from '@/lib/order-status'
 
 interface Order {
   id: number
@@ -47,7 +47,7 @@ export default function AdminOrdersPage() {
       })
       if (res.ok) {
         setOrders(prev => prev.map(o => (o.id === orderId ? { ...o, status: newStatus } : o)))
-        toast.success(`Order #${orderId} updated to ${ORDER_STATUS_META[newStatus].label}`)
+        toast.success(`Order #${orderId} updated to ${ORDER_STATUS_LABELS_EN[newStatus]}`)
       } else {
         const d = await res.json()
         toast.error(d.error ?? 'Failed to update order')
@@ -84,7 +84,7 @@ export default function AdminOrdersPage() {
           if (count === 0) return null
           return (
             <Button key={s} variant={filter === s ? 'default' : 'outline'} size="sm" onClick={() => setFilter(s)}>
-              {ORDER_STATUS_META[s].label} ({count})
+              {ORDER_STATUS_LABELS_EN[s]} ({count})
             </Button>
           )
         })}
@@ -116,9 +116,9 @@ export default function AdminOrdersPage() {
                     {new Date(order.orderedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{order.orderItems.length}</td>
-                  <td className="px-4 py-3 font-semibold text-secondary">¥{order.totalAmount.toLocaleString()}</td>
+                  <td className="px-4 py-3 font-semibold text-secondary">¥{order.totalAmount.toLocaleString('en-US')}</td>
                   <td className="px-4 py-3">
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status} label={ORDER_STATUS_LABELS_EN[order.status]} />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function AdminOrdersPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {ORDER_STATUSES.map(s => (
-                            <SelectItem key={s} value={s}>{ORDER_STATUS_META[s].label}</SelectItem>
+                            <SelectItem key={s} value={s}>{ORDER_STATUS_LABELS_EN[s]}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>

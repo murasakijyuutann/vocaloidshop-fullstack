@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export default function RegisterPage() {
+  const t = useTranslations('Register')
   const router = useRouter()
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', birthday: '' })
   const [showPw, setShowPw] = useState(false)
@@ -22,10 +24,10 @@ export default function RegisterPage() {
 
   const validate = () => {
     const e: Record<string, string> = {}
-    if (!form.name.trim()) e.name = 'Name is required'
-    if (!form.email) e.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
-    if (form.password.length < 8) e.password = 'Password must be at least 8 characters'
+    if (!form.name.trim()) e.name = t('nameRequired')
+    if (!form.email) e.email = t('emailRequired')
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = t('invalidEmail')
+    if (form.password.length < 8) e.password = t('passwordTooShort')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -42,11 +44,11 @@ export default function RegisterPage() {
       })
       const data = await res.json()
       if (res.ok) {
-        toast.success('Account created — please sign in')
+        toast.success(t('accountCreated'))
         router.push('/login')
       } else {
-        if (res.status === 409) setErrors({ email: 'Email already registered' })
-        else toast.error(data.error ?? 'Registration failed')
+        if (res.status === 409) setErrors({ email: t('emailAlreadyRegistered') })
+        else toast.error(data.error ?? t('registrationFailed'))
       }
     } finally {
       setLoading(false)
@@ -55,7 +57,7 @@ export default function RegisterPage() {
 
   const pwStrength = form.password.length === 0 ? 0 : form.password.length < 6 ? 1 : form.password.length < 10 ? 2 : 3
   const strengthColors = ['', 'bg-destructive', 'bg-muted-foreground', 'bg-foreground']
-  const strengthLabels = ['', 'Weak', 'Fair', 'Strong']
+  const strengthLabels = ['', t('strengthWeak'), t('strengthFair'), t('strengthStrong')]
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-background p-4 py-10 page-enter">
@@ -64,20 +66,20 @@ export default function RegisterPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
             VC
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Create account</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Join VocaloCart today</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('heading')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subheading')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('fullName')}</label>
             <div className="relative">
               <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
               <Input
                 type="text"
                 value={form.name}
                 onChange={e => set('name', e.target.value)}
-                placeholder="Hatsune Miku"
+                placeholder={t('namePlaceholder')}
                 className={cn('pl-9', errors.name && 'border-destructive')}
               />
             </div>
@@ -90,14 +92,14 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('email')}</label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
               <Input
                 type="email"
                 value={form.email}
                 onChange={e => set('email', e.target.value)}
-                placeholder="miku@vocaloid.jp"
+                placeholder={t('emailPlaceholder')}
                 className={cn('pl-9', errors.email && 'border-destructive')}
               />
             </div>
@@ -110,20 +112,20 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('password')}</label>
             <div className="relative">
               <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
               <Input
                 type={showPw ? 'text' : 'password'}
                 value={form.password}
                 onChange={e => set('password', e.target.value)}
-                placeholder="At least 8 characters"
+                placeholder={t('passwordPlaceholder')}
                 className={cn('pl-9 pr-9', errors.password && 'border-destructive')}
               />
               <button
                 type="button"
                 onClick={() => setShowPw(v => !v)}
-                aria-label={showPw ? 'Hide password' : 'Show password'}
+                aria-label={showPw ? t('hidePassword') : t('showPassword')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               >
                 {showPw ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
@@ -149,7 +151,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">
-              Phone <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">optional</span>
+              {t('phone')} <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">{t('optional')}</span>
             </label>
             <div className="relative">
               <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
@@ -157,7 +159,7 @@ export default function RegisterPage() {
                 type="tel"
                 value={form.phone}
                 onChange={e => set('phone', e.target.value)}
-                placeholder="+81 90-0000-0000"
+                placeholder={t('phonePlaceholder')}
                 className="pl-9"
               />
             </div>
@@ -165,7 +167,7 @@ export default function RegisterPage() {
 
           <div>
             <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">
-              Birthday <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">optional</span>
+              {t('birthday')} <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-normal text-muted-foreground">{t('optional')}</span>
             </label>
             <div className="relative">
               <Cake className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
@@ -180,14 +182,14 @@ export default function RegisterPage() {
 
           <Button type="submit" disabled={loading} className="mt-2 w-full">
             {loading && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-            {loading ? 'Creating account…' : 'Create account'}
+            {loading ? t('creatingAccount') : t('createAccount')}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
+          {t('haveAccount')}{' '}
           <Link href="/login" className="font-medium text-secondary hover:underline">
-            Sign in
+            {t('signIn')}
           </Link>
         </p>
       </div>

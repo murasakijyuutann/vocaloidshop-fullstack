@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/hooks/use-cart'
@@ -25,6 +26,8 @@ interface WishlistItem {
 }
 
 export default function WishlistPage() {
+  const t = useTranslations('Wishlist')
+  const tc = useTranslations('Common')
   const { status } = useSession()
   const router = useRouter()
   const addItem = useCart(s => s.addItem)
@@ -42,16 +45,16 @@ export default function WishlistPage() {
     const res = await fetch(`/api/wishlist/${productId}`, { method: 'DELETE' })
     if (res.ok) {
       setItems(prev => prev.filter(i => i.product.id !== productId))
-      toast.success('Removed from wishlist')
+      toast.success(t('removedFromWishlist'))
     }
   }
 
   const handleAddToCart = async (productId: number) => {
     try {
       await addItem(productId)
-      toast.success('Added to cart')
+      toast.success(tc('addedToCart'))
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
+      toast.error(e instanceof Error ? e.message : tc('addToCartFailed'))
     }
   }
 
@@ -59,7 +62,7 @@ export default function WishlistPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
       <h1 className="mb-8 flex items-center gap-2 text-3xl font-bold tracking-tight text-foreground">
         <Heart className="h-7 w-7" strokeWidth={2} />
-        My Wishlist
+        {t('title')}
       </h1>
 
       {loading ? (
@@ -79,11 +82,11 @@ export default function WishlistPage() {
       ) : items.length === 0 ? (
         <EmptyState
           icon={Heart}
-          title="Your wishlist is empty"
-          description="Save items you love and buy them later."
+          title={t('emptyTitle')}
+          description={t('emptyDescription')}
           action={
             <Button asChild>
-              <Link href="/">Browse shop</Link>
+              <Link href="/">{t('browseShop')}</Link>
             </Button>
           }
         />
@@ -94,7 +97,7 @@ export default function WishlistPage() {
               key={id}
               product={product}
               onAddToCart={handleAddToCart}
-              cornerAction={{ icon: X, label: 'Remove from wishlist', onClick: handleRemove }}
+              cornerAction={{ icon: X, label: t('removeFromWishlist'), onClick: handleRemove }}
             />
           ))}
         </div>

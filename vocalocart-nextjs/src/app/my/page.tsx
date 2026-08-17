@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -22,6 +23,8 @@ interface UserProfile {
 }
 
 export default function MyPage() {
+  const t = useTranslations('MyPage')
+  const format = useFormatter()
   const { status } = useSession()
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -53,9 +56,9 @@ export default function MyPage() {
       if (res.ok) {
         setProfile(data.user)
         setEditing(false)
-        toast.success('Profile updated')
+        toast.success(t('profileUpdated'))
       } else {
-        toast.error(data.error ?? 'Failed to update profile')
+        toast.error(data.error ?? t('updateFailed'))
       }
     } finally {
       setSaving(false)
@@ -74,21 +77,21 @@ export default function MyPage() {
   if (!profile) return null
 
   const details = [
-    { label: 'Email', value: profile.email, icon: Mail },
-    { label: 'Phone', value: profile.phone ?? '—', icon: Phone },
-    { label: 'Birthday', value: profile.birthday ? new Date(profile.birthday).toLocaleDateString() : '—', icon: Cake },
-    { label: 'Member since', value: new Date(profile.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }), icon: CalendarDays },
+    { label: t('labelEmail'), value: profile.email, icon: Mail },
+    { label: t('labelPhone'), value: profile.phone ?? '—', icon: Phone },
+    { label: t('labelBirthday'), value: profile.birthday ? format.dateTime(new Date(profile.birthday)) : '—', icon: Cake },
+    { label: t('labelMemberSince'), value: format.dateTime(new Date(profile.createdAt), { year: 'numeric', month: 'long' }), icon: CalendarDays },
   ]
 
   const quickLinks = [
-    { href: '/orders', icon: Package, label: 'My Orders' },
-    { href: '/addresses', icon: MapPin, label: 'Addresses' },
-    { href: '/wishlist', icon: Heart, label: 'Wishlist' },
+    { href: '/orders', icon: Package, label: t('myOrders') },
+    { href: '/addresses', icon: MapPin, label: t('addresses') },
+    { href: '/wishlist', icon: Heart, label: t('wishlist') },
   ]
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 page-enter">
-      <PageHeader title="My Page" />
+      <PageHeader title={t('title')} />
 
       <div className="mb-6 flex items-center gap-5 rounded-lg border border-border bg-surface p-6">
         <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
@@ -100,7 +103,7 @@ export default function MyPage() {
           {profile.isAdmin && (
             <Badge variant="outline" className="mt-1.5 gap-1 text-muted-foreground">
               <ShieldCheck className="h-3 w-3" strokeWidth={2} />
-              Admin
+              {t('admin')}
             </Badge>
           )}
         </div>
@@ -108,11 +111,11 @@ export default function MyPage() {
 
       <div className="mb-4 rounded-lg border border-border bg-surface p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-foreground">Profile Details</h2>
+          <h2 className="text-lg font-bold text-foreground">{t('profileDetails')}</h2>
           {!editing && (
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" strokeWidth={2} />
-              Edit
+              {t('edit')}
             </Button>
           )}
         </div>
@@ -120,28 +123,28 @@ export default function MyPage() {
         {editing ? (
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Full Name</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('fullName')}</label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required />
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Phone <span className="font-normal text-muted-foreground">(optional)</span>
+                {t('phone')} <span className="font-normal text-muted-foreground">{t('optional')}</span>
               </label>
               <Input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-foreground">
-                Birthday <span className="font-normal text-muted-foreground">(optional)</span>
+                {t('birthday')} <span className="font-normal text-muted-foreground">{t('optional')}</span>
               </label>
               <Input type="date" value={form.birthday} onChange={e => setForm(f => ({ ...f, birthday: e.target.value }))} />
             </div>
             <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? t('saving') : t('save')}
               </Button>
               <Button type="button" variant="outline" onClick={() => setEditing(false)}>
-                Cancel
+                {t('cancel')}
               </Button>
             </div>
           </form>

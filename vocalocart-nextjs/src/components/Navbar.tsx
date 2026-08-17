@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { useSession, signOut } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { useEffect, useState } from 'react'
@@ -17,15 +18,17 @@ import {
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import LocaleSwitcher from '@/components/LocaleSwitcher'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/wishlist', label: 'Wishlist', icon: Heart },
-  { href: '/contact', label: 'Contact', icon: Mail },
+  { href: '/', labelKey: 'home' as const, icon: Home },
+  { href: '/wishlist', labelKey: 'wishlist' as const, icon: Heart },
+  { href: '/contact', labelKey: 'contact' as const, icon: Mail },
 ]
 
 export default function Navbar() {
+  const t = useTranslations('Nav')
   const { data: session } = useSession()
   const totalItems = useCart(s => s.totalItems)
   const fetchCart = useCart(s => s.fetchCart)
@@ -71,10 +74,10 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden md:flex md:items-center md:gap-1">
-          {navLinks.map(({ href, label, icon: Icon }) => (
+          {navLinks.map(({ href, labelKey, icon: Icon }) => (
             <Link key={href} href={href} className={navLinkClass(href)}>
               <Icon className="h-4 w-4" strokeWidth={2} />
-              {label}
+              {t(labelKey)}
             </Link>
           ))}
 
@@ -82,7 +85,7 @@ export default function Navbar() {
             <>
               <Link href="/cart" className={cn(navLinkClass('/cart'), 'relative')}>
                 <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-                Cart
+                {t('cart')}
                 {cartCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                     {cartCount}
@@ -91,7 +94,7 @@ export default function Navbar() {
               </Link>
               <Link href="/orders" className={navLinkClass('/orders')}>
                 <Package className="h-4 w-4" strokeWidth={2} />
-                Orders
+                {t('orders')}
               </Link>
               <Link href="/my" className={navLinkClass('/my')}>
                 <User className="h-4 w-4" strokeWidth={2} />
@@ -102,11 +105,11 @@ export default function Navbar() {
                 <div className="ml-1 flex items-center gap-1 border-l border-border pl-2">
                   <Link href="/admin/orders" className={navLinkClass('/admin/orders')}>
                     <Settings className="h-4 w-4" strokeWidth={2} />
-                    Orders
+                    {t('adminOrders')}
                   </Link>
                   <Link href="/admin/products" className={navLinkClass('/admin/products')}>
                     <Store className="h-4 w-4" strokeWidth={2} />
-                    Products
+                    {t('adminProducts')}
                   </Link>
                 </div>
               )}
@@ -117,19 +120,21 @@ export default function Navbar() {
                 className="ml-2"
                 onClick={() => signOut({ callbackUrl: '/' })}
               >
-                Sign out
+                {t('signOut')}
               </Button>
             </>
           ) : (
             <>
               <Button variant="ghost" size="sm" className="ml-2" asChild>
-                <Link href="/login">Login</Link>
+                <Link href="/login">{t('login')}</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link href="/register">Register</Link>
+                <Link href="/register">{t('register')}</Link>
               </Button>
             </>
           )}
+
+          <LocaleSwitcher className="ml-2" />
         </div>
 
         <Button
@@ -137,7 +142,7 @@ export default function Navbar() {
           size="icon"
           className="md:hidden"
           onClick={() => setMenuOpen(v => !v)}
-          aria-label="Toggle menu"
+          aria-label={t('toggleMenu')}
         >
           {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
@@ -145,10 +150,14 @@ export default function Navbar() {
 
       {menuOpen && (
         <div className="divide-y divide-border border-t border-border md:hidden">
-          {navLinks.map(({ href, label, icon: Icon }) => (
+          <div className="flex items-center justify-center px-4 py-3">
+            <LocaleSwitcher />
+          </div>
+
+          {navLinks.map(({ href, labelKey, icon: Icon }) => (
             <Link key={href} href={href} className={mobileLinkClass(href)}>
               <Icon className="h-4 w-4" strokeWidth={2} />
-              {label}
+              {t(labelKey)}
             </Link>
           ))}
 
@@ -156,7 +165,7 @@ export default function Navbar() {
             <>
               <Link href="/cart" className={mobileLinkClass('/cart')}>
                 <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-                Cart
+                {t('cart')}
                 {cartCount > 0 && (
                   <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                     {cartCount}
@@ -165,21 +174,21 @@ export default function Navbar() {
               </Link>
               <Link href="/orders" className={mobileLinkClass('/orders')}>
                 <Package className="h-4 w-4" strokeWidth={2} />
-                Orders
+                {t('orders')}
               </Link>
               <Link href="/my" className={mobileLinkClass('/my')}>
                 <User className="h-4 w-4" strokeWidth={2} />
-                My Page
+                {t('myPage')}
               </Link>
               {session.user?.isAdmin && (
                 <>
                   <Link href="/admin/orders" className={mobileLinkClass('/admin/orders')}>
                     <Settings className="h-4 w-4" strokeWidth={2} />
-                    Admin · Orders
+                    {t('adminPrefix')} · {t('adminOrders')}
                   </Link>
                   <Link href="/admin/products" className={mobileLinkClass('/admin/products')}>
                     <Store className="h-4 w-4" strokeWidth={2} />
-                    Admin · Products
+                    {t('adminPrefix')} · {t('adminProducts')}
                   </Link>
                 </>
               )}
@@ -187,16 +196,16 @@ export default function Navbar() {
                 onClick={() => signOut({ callbackUrl: '/' })}
                 className="flex w-full items-center px-4 py-3 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground"
               >
-                Sign out
+                {t('signOut')}
               </button>
             </>
           ) : (
             <>
               <Link href="/login" className={mobileLinkClass('/login')}>
-                Login
+                {t('login')}
               </Link>
               <Link href="/register" className={mobileLinkClass('/register')}>
-                Register
+                {t('register')}
               </Link>
             </>
           )}

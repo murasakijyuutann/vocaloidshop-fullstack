@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
@@ -60,6 +61,7 @@ function StripePaymentForm({
   couponCode: string
   onBack: () => void
 }) {
+  const t = useTranslations('Checkout')
   const stripe = useStripe()
   const elements = useElements()
   const [paying, setPaying] = useState(false)
@@ -81,7 +83,7 @@ function StripePaymentForm({
     })
 
     if (error) {
-      toast.error(error.message ?? 'Payment failed')
+      toast.error(error.message ?? t('paymentFailed'))
       setPaying(false)
     }
   }
@@ -92,18 +94,18 @@ function StripePaymentForm({
       <div className="flex gap-3 pt-2">
         <Button type="button" variant="outline" onClick={onBack} disabled={paying} className="flex-1">
           <ArrowLeft className="h-4 w-4" />
-          Back
+          {t('back')}
         </Button>
         <Button type="submit" disabled={!stripe || paying} className="flex-2">
           {paying ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Processing…
+              {t('processing')}
             </>
           ) : (
             <>
               <Lock className="h-4 w-4" />
-              Pay now
+              {t('payNow')}
             </>
           )}
         </Button>
@@ -114,6 +116,10 @@ function StripePaymentForm({
 
 // ── Main page ──────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
+  const t = useTranslations('Checkout')
+  const ts = useTranslations('OrderSummary')
+  const tc = useTranslations('Common')
+  const format = useFormatter()
   const { status } = useSession()
   const router = useRouter()
   const { items, totalPrice, totalItems, fetchCart } = useCart()
@@ -179,11 +185,11 @@ export default function CheckoutPage() {
       if (data.valid) {
         setCouponCode(code)
         setDiscount(data.discount)
-        toast.success(`Coupon applied — ¥${data.discount.toLocaleString()} off`)
+        toast.success(t('couponApplied', { amount: format.number(data.discount) }))
       } else {
         setCouponCode('')
         setDiscount(0)
-        setCouponError(data.error ?? 'Invalid coupon')
+        setCouponError(data.error ?? t('invalidCoupon'))
       }
     } finally {
       setValidatingCoupon(false)
@@ -199,7 +205,7 @@ export default function CheckoutPage() {
   }
 
   const handleProceedToPayment = async () => {
-    if (items.length === 0) { toast.error('Your cart is empty'); return }
+    if (items.length === 0) { toast.error(t('cartEmpty')); return }
     setCreatingIntent(true)
     try {
       const res = await fetch('/api/payments/create-intent', {
@@ -214,7 +220,7 @@ export default function CheckoutPage() {
       if (res.ok && data.clientSecret) {
         setClientSecret(data.clientSecret)
       } else {
-        toast.error(data.error ?? 'Could not start payment')
+        toast.error(data.error ?? t('couldNotStartPayment'))
       }
     } finally {
       setCreatingIntent(false)
@@ -223,7 +229,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
-      <PageHeader title="Checkout" />
+      <PageHeader title={t('title')} />
 
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
         {/* Left column */}
@@ -231,14 +237,14 @@ export default function CheckoutPage() {
           <fieldset className="rounded-lg border border-border bg-surface p-6">
             <legend className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <MapPin className="h-4 w-4" strokeWidth={2} />
-              Shipping address
+              {t('shippingAddress')}
             </legend>
             {addresses.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="mb-4 text-sm text-muted-foreground">
-                  No saved addresses. Please add one first.
+                  {t('noSavedAddresses')}
                 </p>
-                <Button onClick={() => router.push('/addresses')}>Add address</Button>
+                <Button onClick={() => router.push('/addresses')}>{t('addAddress')}</Button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -270,14 +276,14 @@ export default function CheckoutPage() {
                       <p className="text-muted-foreground">{addr.country} · {addr.phone}</p>
                       {addr.isDefault && (
                         <Badge variant="outline" className="mt-1.5 text-muted-foreground">
-                          Default
+                          {t('defaultBadge')}
                         </Badge>
                       )}
                     </div>
                   </label>
                 ))}
                 <Button variant="ghost" size="sm" onClick={() => router.push('/addresses')}>
-                  + Add new address
+                  {t('addNewAddress')}
                 </Button>
               </div>
             )}
@@ -286,7 +292,7 @@ export default function CheckoutPage() {
           <div className="rounded-lg border border-border bg-surface p-6">
             <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
               <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-              Items ({totalItems()})
+              {t('itemsCount', { count: totalItems() })}
             </h2>
             <div className="divide-y divide-border">
               {items.map(item => (
@@ -303,7 +309,7 @@ export default function CheckoutPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      ¥{item.price.toLocaleString()} × {item.quantity}
+                      ¥{format.number(item.price)} × {item.quantity}
                     </p>
                   </div>
                   <PriceTag value={item.price * item.quantity} size="sm" />
@@ -317,28 +323,28 @@ export default function CheckoutPage() {
         <div className="space-y-4">
           <div className="rounded-lg border border-border bg-surface p-6">
             <h2 className="mb-4 border-b border-border pb-4 text-lg font-bold text-foreground">
-              Order Summary
+              {ts('title')}
             </h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal</span><span>¥{subtotal.toLocaleString()}</span>
+                <span>{ts('subtotal')}</span><span>¥{format.number(subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Shipping</span>
-                <span>{shipping === 0 ? 'Free' : `¥${shipping.toLocaleString()}`}</span>
+                <span>{ts('shipping')}</span>
+                <span>{shipping === 0 ? ts('free') : `¥${format.number(shipping)}`}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Coupon ({couponCode})</span><span>−¥{discount.toLocaleString()}</span>
+                  <span>{ts('couponWithCode', { code: couponCode })}</span><span>−¥{format.number(discount)}</span>
                 </div>
               )}
               <div className="flex justify-between text-muted-foreground">
-                <span>消費税 (10%)</span>
-                <span>¥{tax.toLocaleString()}</span>
+                <span>{ts('tax')}</span>
+                <span>¥{format.number(tax)}</span>
               </div>
             </div>
             <div className="mt-4 flex justify-between border-t border-border pt-4">
-              <span className="font-semibold text-foreground">Total</span>
+              <span className="font-semibold text-foreground">{ts('total')}</span>
               <PriceTag value={total} size="lg" />
             </div>
           </div>
@@ -347,7 +353,7 @@ export default function CheckoutPage() {
             <div className="rounded-lg border border-border bg-surface p-6">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Tag className="h-4 w-4" strokeWidth={2} />
-                Coupon code
+                {t('couponCodeHeading')}
               </h2>
               {couponCode ? (
                 <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
@@ -357,15 +363,15 @@ export default function CheckoutPage() {
                   </span>
                   <Button variant="ghost" size="sm" onClick={handleRemoveCoupon}>
                     <X className="h-4 w-4" />
-                    Remove
+                    {tc('remove')}
                   </Button>
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <label htmlFor="coupon-code-input" className="sr-only">Coupon code</label>
+                  <label htmlFor="coupon-code-input" className="sr-only">{t('couponCodeHeading')}</label>
                   <Input
                     id="coupon-code-input"
-                    placeholder="Enter code"
+                    placeholder={t('enterCode')}
                     value={couponInput}
                     onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
                     onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
@@ -377,7 +383,7 @@ export default function CheckoutPage() {
                     onClick={handleApplyCoupon}
                     disabled={validatingCoupon || !couponInput.trim()}
                   >
-                    {validatingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    {validatingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : t('apply')}
                   </Button>
                 </div>
               )}
@@ -395,7 +401,7 @@ export default function CheckoutPage() {
               <>
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-foreground">
                   <CreditCard className="h-4 w-4" strokeWidth={2} />
-                  Payment details
+                  {t('paymentDetailsHeading')}
                 </h2>
                 <Elements
                   stripe={stripePromise}
@@ -428,12 +434,12 @@ export default function CheckoutPage() {
                 {creatingIntent ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading payment…
+                    {t('loadingPayment')}
                   </>
                 ) : (
                   <>
                     <CreditCard className="h-4 w-4" />
-                    Proceed to payment
+                    {t('proceedToPayment')}
                   </>
                 )}
               </Button>
@@ -442,7 +448,7 @@ export default function CheckoutPage() {
 
           <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
-            Secured by Stripe · Your payment info is never stored on our servers.
+            {t('securedByStripe')}
           </p>
         </div>
       </div>

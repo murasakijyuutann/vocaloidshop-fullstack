@@ -41,6 +41,8 @@
 }
 
 @theme inline {
+  --font-sans: var(--font-inter), var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
@@ -85,6 +87,15 @@
 body {
   background: var(--background);
   color: var(--foreground);
+  /*
+   * Japanese text has no spaces, so it doesn't get natural word-boundary
+   * wrap points the way English does. This lets any text node break at a
+   * character boundary as a last resort instead of overflowing its box
+   * (docs/vocalocart-i18n-plan.md Stage 8). Elements that intentionally
+   * force a single line (e.g. shadcn Button's whitespace-nowrap) are
+   * unaffected since this only applies once wrapping is already allowed.
+   */
+  overflow-wrap: break-word;
 }
 
 /* Smooth page transitions */

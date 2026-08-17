@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { toast } from 'sonner'
@@ -26,6 +27,8 @@ const SIZE = 12
 const ALL_CATEGORIES = 'all'
 
 export default function HomePage() {
+  const t = useTranslations('Home')
+  const tc = useTranslations('Common')
   const { data: session } = useSession()
   const addItem = useCart(s => s.addItem)
 
@@ -61,26 +64,26 @@ export default function HomePage() {
   useEffect(() => { loadProducts() }, [loadProducts])
 
   const handleAddToCart = async (productId: number) => {
-    if (!session) { toast.info('Please log in to add items to cart'); return }
+    if (!session) { toast.info(tc('loginToAddCart')); return }
     try {
       await addItem(productId)
-      toast.success('Added to cart')
+      toast.success(tc('addedToCart'))
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Failed to add to cart')
+      toast.error(e instanceof Error ? e.message : tc('addToCartFailed'))
     }
   }
 
   const handleWishlist = async (productId: number) => {
-    if (!session) { toast.info('Please log in to use wishlist'); return }
+    if (!session) { toast.info(tc('loginToWishlist')); return }
     try {
       const res = await fetch('/api/wishlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId }),
       })
-      if (res.ok) toast.success('Added to wishlist')
-      else toast.info('Already in wishlist')
-    } catch { toast.error('Failed to update wishlist') }
+      if (res.ok) toast.success(tc('addedToWishlist'))
+      else toast.info(tc('alreadyInWishlist'))
+    } catch { toast.error(tc('wishlistUpdateFailed')) }
   }
 
   return (
@@ -92,7 +95,7 @@ export default function HomePage() {
             VocaloCart
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-lg text-muted-foreground">
-            Your destination for Vocaloid merchandise
+            {t('subtitle')}
           </p>
         </div>
       </section>
@@ -104,7 +107,7 @@ export default function HomePage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               className="pl-9"
-              placeholder="Search products..."
+              placeholder={t('searchPlaceholder')}
               value={q}
               onChange={e => { setQ(e.target.value); setPage(0) }}
             />
@@ -115,10 +118,10 @@ export default function HomePage() {
             onValueChange={v => { setCategoryId(v === ALL_CATEGORIES ? '' : v); setPage(0) }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="All categories" />
+              <SelectValue placeholder={t('allCategories')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL_CATEGORIES}>All categories</SelectItem>
+              <SelectItem value={ALL_CATEGORIES}>{t('allCategories')}</SelectItem>
               {categories.map(c => (
                 <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
               ))}
@@ -130,9 +133,9 @@ export default function HomePage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Sort: Name</SelectItem>
-              <SelectItem value="price">Sort: Price</SelectItem>
-              <SelectItem value="createdAt">Sort: Newest</SelectItem>
+              <SelectItem value="name">{t('sortName')}</SelectItem>
+              <SelectItem value="price">{t('sortPrice')}</SelectItem>
+              <SelectItem value="createdAt">{t('sortNewest')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -141,8 +144,8 @@ export default function HomePage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="asc">Ascending</SelectItem>
-              <SelectItem value="desc">Descending</SelectItem>
+              <SelectItem value="asc">{t('ascending')}</SelectItem>
+              <SelectItem value="desc">{t('descending')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -165,8 +168,8 @@ export default function HomePage() {
         ) : products.length === 0 ? (
           <EmptyState
             icon={PackageSearch}
-            title="No products found"
-            description="Try adjusting your search or filters."
+            title={t('noProductsTitle')}
+            description={t('noProductsDescription')}
           />
         ) : (
           <>
@@ -176,7 +179,7 @@ export default function HomePage() {
                   key={p.id}
                   product={p}
                   onAddToCart={handleAddToCart}
-                  cornerAction={{ icon: Heart, label: 'Add to wishlist', onClick: handleWishlist }}
+                  cornerAction={{ icon: Heart, label: tc('addToWishlist'), onClick: handleWishlist }}
                 />
               ))}
             </div>
@@ -190,17 +193,17 @@ export default function HomePage() {
                   onClick={() => setPage(p => Math.max(0, p - 1))}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Previous
+                  {t('previous')}
                 </Button>
                 <span className="text-sm font-medium text-muted-foreground">
-                  Page {page + 1} of {totalPages}
+                  {t('pageOf', { page: page + 1, totalPages })}
                 </span>
                 <Button
                   variant="outline"
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(p => p + 1)}
                 >
-                  Next
+                  {t('next')}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
+  const t = useTranslations('Login')
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,9 +21,9 @@ export default function LoginPage() {
 
   const validate = () => {
     const e: typeof errors = {}
-    if (!email) e.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Invalid email'
-    if (!password) e.password = 'Password is required'
+    if (!email) e.email = t('emailRequired')
+    else if (!/\S+@\S+\.\S+/.test(email)) e.email = t('invalidEmail')
+    if (!password) e.password = t('passwordRequired')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -33,12 +35,12 @@ export default function LoginPage() {
     try {
       const res = await signIn('credentials', { email, password, redirect: false })
       if (res?.ok) {
-        toast.success('Welcome back')
+        toast.success(t('welcomeBackToast'))
         router.push('/')
         router.refresh()
       } else {
-        toast.error('Invalid email or password')
-        setErrors({ password: 'Invalid email or password' })
+        toast.error(t('invalidCredentials'))
+        setErrors({ password: t('invalidCredentials') })
       }
     } finally {
       setLoading(false)
@@ -52,20 +54,20 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
             VC
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Sign in to your VocaloCart account</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('heading')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subheading')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('email')}</label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
               <Input
                 type="email"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setErrors(v => ({ ...v, email: undefined })) }}
-                placeholder="you@example.com"
+                placeholder={t('emailPlaceholder')}
                 className={cn('pl-9', errors.email && 'border-destructive')}
               />
             </div>
@@ -78,7 +80,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">Password</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">{t('password')}</label>
             <div className="relative">
               <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
               <Input
@@ -91,7 +93,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPw(v => !v)}
-                aria-label={showPw ? 'Hide password' : 'Show password'}
+                aria-label={showPw ? t('hidePassword') : t('showPassword')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
               >
                 {showPw ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
@@ -107,14 +109,14 @@ export default function LoginPage() {
 
           <Button type="submit" disabled={loading} className="mt-2 w-full">
             {loading && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? t('signingIn') : t('signIn')}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
+          {t('noAccount')}{' '}
           <Link href="/register" className="font-medium text-secondary hover:underline">
-            Create one
+            {t('createOne')}
           </Link>
         </p>
       </div>

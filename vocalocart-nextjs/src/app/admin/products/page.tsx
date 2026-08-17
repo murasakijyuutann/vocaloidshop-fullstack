@@ -285,7 +285,7 @@ export default function AdminProductsPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{p.category.name}</td>
-                <td className="px-4 py-3 text-right font-semibold text-secondary">¥{p.price.toLocaleString()}</td>
+                <td className="px-4 py-3 text-right font-semibold text-secondary">¥{p.price.toLocaleString('en-US')}</td>
                 <td className="px-4 py-3 text-right">
                   <span className={cn('font-medium', p.stock === 0 ? 'text-destructive' : p.stock < 5 ? 'text-foreground' : 'text-muted-foreground')}>
                     {p.stock}

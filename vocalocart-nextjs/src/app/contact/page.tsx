@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
 import { User, Mail, MessageSquare, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,7 @@ import { cn } from '@/lib/utils'
 const EMPTY = { name: '', email: '', subject: '', message: '' }
 
 export default function ContactPage() {
+  const t = useTranslations('Contact')
   const [form, setForm] = useState(EMPTY)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [sending, setSending] = useState(false)
@@ -23,11 +25,11 @@ export default function ContactPage() {
 
   const validate = () => {
     const e: Record<string, string> = {}
-    if (!form.name.trim()) e.name = 'Name is required'
-    if (!form.email) e.email = 'Email is required'
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
-    if (!form.subject.trim()) e.subject = 'Subject is required'
-    if (form.message.trim().length < 10) e.message = 'Message must be at least 10 characters'
+    if (!form.name.trim()) e.name = t('nameRequired')
+    if (!form.email) e.email = t('emailRequired')
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = t('invalidEmail')
+    if (!form.subject.trim()) e.subject = t('subjectRequired')
+    if (form.message.trim().length < 10) e.message = t('messageMinLength')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -44,10 +46,10 @@ export default function ContactPage() {
       })
       if (res.ok) {
         setSent(true)
-        toast.success("Message sent — we'll be in touch soon")
+        toast.success(t('messageSentToast'))
       } else {
         const d = await res.json()
-        toast.error(d.error ?? 'Failed to send message')
+        toast.error(d.error ?? t('sendFailed'))
       }
     } finally {
       setSending(false)
@@ -57,21 +59,21 @@ export default function ContactPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 page-enter">
       <PageHeader
-        title="Contact Us"
-        description="We'd love to hear from you — send a message and we'll respond within 24 hours."
+        title={t('title')}
+        description={t('description')}
       />
 
       {sent ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-surface px-6 py-16 text-center">
           <CheckCircle2 className="h-8 w-8 text-primary" strokeWidth={1.5} />
-          <h2 className="text-lg font-bold text-foreground">Message sent</h2>
-          <p className="max-w-sm text-sm text-muted-foreground">Thank you for reaching out. We&apos;ll get back to you soon.</p>
+          <h2 className="text-lg font-bold text-foreground">{t('sentTitle')}</h2>
+          <p className="max-w-sm text-sm text-muted-foreground">{t('sentDescription')}</p>
           <Button
             variant="outline"
             className="mt-3"
             onClick={() => { setSent(false); setForm(EMPTY) }}
           >
-            Send another message
+            {t('sendAnother')}
           </Button>
         </div>
       ) : (
@@ -79,14 +81,14 @@ export default function ContactPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Your Name</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{t('yourName')}</label>
                 <div className="relative">
                   <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
                   <Input
                     type="text"
                     value={form.name}
                     onChange={e => set('name', e.target.value)}
-                    placeholder="Hatsune Miku"
+                    placeholder={t('namePlaceholder')}
                     className={cn('pl-9', errors.name && 'border-destructive')}
                   />
                 </div>
@@ -99,14 +101,14 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Email Address</label>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">{t('emailAddress')}</label>
                 <div className="relative">
                   <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
                   <Input
                     type="email"
                     value={form.email}
                     onChange={e => set('email', e.target.value)}
-                    placeholder="miku@vocaloid.jp"
+                    placeholder={t('emailPlaceholder')}
                     className={cn('pl-9', errors.email && 'border-destructive')}
                   />
                 </div>
@@ -120,14 +122,14 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Subject</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('subject')}</label>
               <div className="relative">
                 <MessageSquare className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={2} />
                 <Input
                   type="text"
                   value={form.subject}
                   onChange={e => set('subject', e.target.value)}
-                  placeholder="Order inquiry, feedback, or anything else"
+                  placeholder={t('subjectPlaceholder')}
                   className={cn('pl-9', errors.subject && 'border-destructive')}
                 />
               </div>
@@ -140,12 +142,12 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground">Message</label>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">{t('message')}</label>
               <Textarea
                 value={form.message}
                 onChange={e => set('message', e.target.value)}
                 rows={6}
-                placeholder="Tell us how we can help you…"
+                placeholder={t('messagePlaceholder')}
                 className={cn('resize-none', errors.message && 'border-destructive')}
               />
               <div className="mt-1 flex items-center justify-between">
@@ -155,13 +157,13 @@ export default function ContactPage() {
                     {errors.message}
                   </p>
                 ) : <span />}
-                <p className="text-xs text-muted-foreground">{form.message.length} characters</p>
+                <p className="text-xs text-muted-foreground">{t('characters', { count: form.message.length })}</p>
               </div>
             </div>
 
             <Button type="submit" disabled={sending} className="w-full">
               {sending && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-              {sending ? 'Sending…' : 'Send Message'}
+              {sending ? t('sending') : t('sendMessage')}
             </Button>
           </form>
         </div>

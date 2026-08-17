@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 
 // This is a Server Component wrapping the client PDP (`page.tsx`) purely to
@@ -20,17 +21,18 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { id } = await params
   const product = await getProduct(id)
+  const t = await getTranslations('Metadata')
 
   if (!product) {
-    return { title: 'Product not found | VocaloCart' }
+    return { title: t('productNotFound') }
   }
 
   const description =
     product.description?.slice(0, 160) ??
-    `${product.name} — available now at VocaloCart, your destination for Vocaloid merchandise.`
+    t('productDescriptionFallback', { name: product.name })
 
   return {
-    title: `${product.name} | VocaloCart`,
+    title: t('productTitleTemplate', { name: product.name }),
     description,
     openGraph: {
       title: product.name,

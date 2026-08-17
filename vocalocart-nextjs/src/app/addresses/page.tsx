@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -27,18 +28,19 @@ interface Address {
 
 const EMPTY = { recipientName: '', line1: '', line2: '', city: '', state: '', postalCode: '', country: 'Japan', phone: '', isDefault: false }
 
-const FIELDS: { key: keyof typeof EMPTY; label: string; required: boolean; col?: string }[] = [
-  { key: 'recipientName', label: 'Recipient Name', required: true, col: 'sm:col-span-2' },
-  { key: 'line1', label: 'Address Line 1', required: true, col: 'sm:col-span-2' },
-  { key: 'line2', label: 'Address Line 2 (optional)', required: false, col: 'sm:col-span-2' },
-  { key: 'city', label: 'City', required: true },
-  { key: 'state', label: 'State / Province (optional)', required: false },
-  { key: 'postalCode', label: 'Postal Code', required: true },
-  { key: 'country', label: 'Country', required: true },
-  { key: 'phone', label: 'Phone', required: true },
+const FIELDS: { key: keyof typeof EMPTY; labelKey: string; required: boolean; col?: string }[] = [
+  { key: 'recipientName', labelKey: 'recipientName', required: true, col: 'sm:col-span-2' },
+  { key: 'line1', labelKey: 'addressLine1', required: true, col: 'sm:col-span-2' },
+  { key: 'line2', labelKey: 'addressLine2', required: false, col: 'sm:col-span-2' },
+  { key: 'city', labelKey: 'city', required: true },
+  { key: 'state', labelKey: 'state', required: false },
+  { key: 'postalCode', labelKey: 'postalCode', required: true },
+  { key: 'country', labelKey: 'country', required: true },
+  { key: 'phone', labelKey: 'phone', required: true },
 ]
 
 export default function AddressesPage() {
+  const t = useTranslations('Addresses')
   const { status } = useSession()
   const router = useRouter()
   const [addresses, setAddresses] = useState<Address[]>([])
@@ -57,7 +59,7 @@ export default function AddressesPage() {
     fetch('/api/addresses').then(r => r.ok ? r.json() : null).then(d => setAddresses(d?.addresses ?? [])).finally(() => setLoading(false))
   }
 
-  const openAdd = () => { setEditing(null); setForm(EMPTY); setShowForm(true) }
+  const openAdd = () => { setEditing(null); setForm({ ...EMPTY, country: t('defaultCountry') }); setShowForm(true) }
   const openEdit = (a: Address) => {
     setEditing(a)
     setForm({ recipientName: a.recipientName, line1: a.line1, line2: a.line2 ?? '', city: a.city, state: a.state ?? '', postalCode: a.postalCode, country: a.country, phone: a.phone, isDefault: a.isDefault })
@@ -73,12 +75,12 @@ export default function AddressesPage() {
         ? await fetch(`/api/addresses/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         : await fetch('/api/addresses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       if (res.ok) {
-        toast.success(editing ? 'Address updated' : 'Address added')
+        toast.success(editing ? t('addressUpdated') : t('addressAdded'))
         setShowForm(false)
         reload()
       } else {
         const d = await res.json()
-        toast.error(d.error ?? 'Failed to save address')
+        toast.error(d.error ?? t('saveFailed'))
       }
     } finally {
       setSaving(false)
@@ -86,15 +88,15 @@ export default function AddressesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Delete this address?')) return
+    if (!confirm(t('deleteConfirm'))) return
     const res = await fetch(`/api/addresses/${id}`, { method: 'DELETE' })
-    if (res.ok) { toast.success('Address deleted'); reload() }
-    else toast.error('Failed to delete')
+    if (res.ok) { toast.success(t('addressDeleted')); reload() }
+    else toast.error(t('deleteFailed'))
   }
 
   const handleSetDefault = async (id: number) => {
     const res = await fetch(`/api/addresses/${id}/default`, { method: 'PATCH' })
-    if (res.ok) { toast.success('Default address updated'); reload() }
+    if (res.ok) { toast.success(t('defaultUpdated')); reload() }
   }
 
   const f = (k: keyof typeof EMPTY, v: string | boolean) => setForm(p => ({ ...p, [k]: v }))
@@ -102,22 +104,22 @@ export default function AddressesPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 page-enter">
       <PageHeader
-        title="Addresses"
+        title={t('title')}
         actions={
           <Button onClick={openAdd}>
             <Plus className="h-4 w-4" strokeWidth={2} />
-            Add Address
+            {t('addAddress')}
           </Button>
         }
       />
 
       {showForm && (
         <div className="mb-6 rounded-lg border border-border bg-surface p-6">
-          <h2 className="mb-5 text-lg font-bold text-foreground">{editing ? 'Edit Address' : 'New Address'}</h2>
+          <h2 className="mb-5 text-lg font-bold text-foreground">{editing ? t('editAddress') : t('newAddress')}</h2>
           <form onSubmit={handleSave} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {FIELDS.map(({ key, label, required, col }) => (
+            {FIELDS.map(({ key, labelKey, required, col }) => (
               <div key={key} className={col ?? ''}>
-                <label htmlFor={`address-${key}`} className="mb-1 block text-sm font-medium text-foreground">{label}</label>
+                <label htmlFor={`address-${key}`} className="mb-1 block text-sm font-medium text-foreground">{t(labelKey)}</label>
                 <Input
                   id={`address-${key}`}
                   type="text"
@@ -129,14 +131,14 @@ export default function AddressesPage() {
             ))}
             <div className="flex items-center gap-2 sm:col-span-2">
               <input id="default" type="checkbox" checked={form.isDefault} onChange={e => f('isDefault', e.target.checked)} className="h-4 w-4 accent-primary" />
-              <label htmlFor="default" className="cursor-pointer text-sm font-medium text-foreground">Set as default address</label>
+              <label htmlFor="default" className="cursor-pointer text-sm font-medium text-foreground">{t('setAsDefault')}</label>
             </div>
             <div className="flex gap-3 pt-2 sm:col-span-2">
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />}
-                {saving ? 'Saving…' : 'Save'}
+                {saving ? t('saving') : t('save')}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{t('cancel')}</Button>
             </div>
           </form>
         </div>
@@ -149,7 +151,7 @@ export default function AddressesPage() {
           ))}
         </div>
       ) : addresses.length === 0 ? (
-        <EmptyState icon={MapPin} title="No addresses saved" description="Add an address to speed up checkout." />
+        <EmptyState icon={MapPin} title={t('noAddressesTitle')} description={t('noAddressesDescription')} />
       ) : (
         <div className="space-y-4">
           {addresses.map(addr => (
@@ -164,7 +166,7 @@ export default function AddressesPage() {
                 <div className="text-sm">
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-bold text-foreground">{addr.recipientName}</span>
-                    {addr.isDefault && <Badge variant="outline" className="text-muted-foreground">Default</Badge>}
+                    {addr.isDefault && <Badge variant="outline" className="text-muted-foreground">{t('defaultBadge')}</Badge>}
                   </div>
                   <p className="text-muted-foreground">{addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}</p>
                   <p className="text-muted-foreground">{addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}</p>
@@ -174,12 +176,12 @@ export default function AddressesPage() {
                   {!addr.isDefault && (
                     <Button variant="outline" size="sm" onClick={() => handleSetDefault(addr.id)}>
                       <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} />
-                      Set default
+                      {t('setDefault')}
                     </Button>
                   )}
                   <Button variant="outline" size="sm" onClick={() => openEdit(addr)}>
                     <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
-                    Edit
+                    {t('edit')}
                   </Button>
                   <Button
                     variant="outline"
@@ -188,7 +190,7 @@ export default function AddressesPage() {
                     onClick={() => handleDelete(addr.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-                    Delete
+                    {t('delete')}
                   </Button>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useCart } from '@/hooks/use-cart'
 import { useRouter } from 'next/navigation'
@@ -13,9 +14,13 @@ import { PageHeader } from '@/components/PageHeader'
 import { PriceTag } from '@/components/PriceTag'
 import { QuantityStepper } from '@/components/QuantityStepper'
 import { EmptyState } from '@/components/EmptyState'
-import { calculateShipping, calculateTax } from '@/lib/pricing'
+import { calculateShipping, calculateTax, FREE_SHIPPING_THRESHOLD } from '@/lib/pricing'
 
 export default function CartPage() {
+  const t = useTranslations('Cart')
+  const ts = useTranslations('OrderSummary')
+  const tc = useTranslations('Common')
+  const format = useFormatter()
   const { status } = useSession()
   const router = useRouter()
   const { items, loading, fetchCart, updateQuantity, removeItem, clearCart, totalItems, totalPrice } = useCart()
@@ -28,12 +33,12 @@ export default function CartPage() {
 
   const handleClear = async () => {
     await clearCart()
-    toast.success('Cart cleared')
+    toast.success(t('cartCleared'))
   }
 
   const handleRemove = async (id: number) => {
     await removeItem(id)
-    toast.success('Item removed')
+    toast.success(t('itemRemoved'))
   }
 
   if (status === 'loading' || loading || !fetched) {
@@ -67,13 +72,13 @@ export default function CartPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 page-enter">
       <PageHeader
-        title="Your Cart"
-        description={`${totalItems()} item${totalItems() === 1 ? '' : 's'}`}
+        title={t('title')}
+        description={t('itemCount', { count: totalItems() })}
         actions={
           <Button variant="outline" asChild>
             <Link href="/">
               <ArrowLeft className="h-4 w-4" />
-              Continue shopping
+              {t('continueShopping')}
             </Link>
           </Button>
         }
@@ -82,11 +87,11 @@ export default function CartPage() {
       {items.length === 0 ? (
         <EmptyState
           icon={ShoppingCart}
-          title="Your cart is empty"
-          description="Add some Vocaloid merch to get started."
+          title={t('emptyTitle')}
+          description={t('emptyDescription')}
           action={
             <Button asChild>
-              <Link href="/">Shop now</Link>
+              <Link href="/">{tc('shopNow')}</Link>
             </Button>
           }
         />
@@ -95,10 +100,10 @@ export default function CartPage() {
           {/* Items */}
           <div className="rounded-lg border border-border bg-surface p-4 sm:p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-semibold text-foreground">Items</h2>
+              <h2 className="font-semibold text-foreground">{t('itemsHeading')}</h2>
               <Button variant="ghost" size="sm" onClick={handleClear} className="text-muted-foreground hover:text-destructive">
                 <Trash2 className="h-4 w-4" />
-                Clear all
+                {t('clearAll')}
               </Button>
             </div>
 
@@ -147,7 +152,7 @@ export default function CartPage() {
                         className="text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
-                        Remove
+                        {tc('remove')}
                       </Button>
                     </div>
                   </div>
@@ -163,31 +168,33 @@ export default function CartPage() {
           {/* Summary */}
           <div className="sticky top-24 rounded-lg border border-border bg-surface p-6">
             <h2 className="mb-4 border-b border-border pb-4 text-lg font-bold text-foreground">
-              Order Summary
+              {ts('title')}
             </h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <span>Subtotal ({totalItems()} items)</span>
-                <span>¥{subtotal.toLocaleString()}</span>
+                <span>{ts('subtotalWithCount', { count: totalItems() })}</span>
+                <span>¥{format.number(subtotal)}</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Shipping</span>
-                <span>{shipping === 0 ? 'Free' : `¥${shipping.toLocaleString()}`}</span>
+                <span>{ts('shipping')}</span>
+                <span>{shipping === 0 ? ts('free') : `¥${format.number(shipping)}`}</span>
               </div>
               {shipping > 0 && (
-                <p className="text-xs text-muted-foreground/70">Free shipping on orders ¥5,000+</p>
+                <p className="text-xs text-muted-foreground/70">
+                  {ts('freeShippingNote', { amount: format.number(FREE_SHIPPING_THRESHOLD) })}
+                </p>
               )}
               <div className="flex justify-between text-muted-foreground">
-                <span>消費税 (10%)</span>
-                <span>¥{tax.toLocaleString()}</span>
+                <span>{ts('tax')}</span>
+                <span>¥{format.number(tax)}</span>
               </div>
             </div>
             <div className="mt-4 flex justify-between border-t border-border pt-4">
-              <span className="font-semibold text-foreground">Total</span>
+              <span className="font-semibold text-foreground">{ts('total')}</span>
               <PriceTag value={total} size="lg" />
             </div>
             <Button size="lg" className="mt-5 w-full" onClick={() => router.push('/checkout')}>
-              Proceed to checkout
+              {t('proceedToCheckout')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

@@ -1,3 +1,4 @@
+import { useFormatter } from "next-intl"
 import { cn } from "@/lib/utils"
 
 /**
@@ -14,6 +15,8 @@ export function PriceTag({
   className?: string
   size?: "sm" | "default" | "lg"
 }) {
+  const format = useFormatter()
+
   return (
     <span
       className={cn(
@@ -24,7 +27,7 @@ export function PriceTag({
         className
       )}
     >
-      ¥{value.toLocaleString()}
+      ¥{format.number(value)}
     </span>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -39,6 +40,10 @@ interface Order {
 }
 
 export default function OrdersPage() {
+  const t = useTranslations('Orders')
+  const ts = useTranslations('OrderSummary')
+  const tc = useTranslations('Common')
+  const format = useFormatter()
   const { status } = useSession()
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
@@ -58,7 +63,7 @@ export default function OrdersPage() {
   }, [status, router])
 
   const handleCancel = async (id: number) => {
-    if (!confirm('Cancel this order?')) return
+    if (!confirm(t('cancelConfirm'))) return
     const res = await fetch(`/api/orders/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -66,16 +71,16 @@ export default function OrdersPage() {
     })
     if (res.ok) {
       setOrders(ords => ords.map(o => (o.id === id ? { ...o, status: 'CANCELED' } : o)))
-      toast.success('Order canceled')
+      toast.success(t('orderCanceled'))
     } else {
       const d = await res.json()
-      toast.error(d.error ?? 'Cannot cancel this order')
+      toast.error(d.error ?? t('cancelFailed'))
     }
   }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 page-enter">
-      <PageHeader title="My Orders" />
+      <PageHeader title={t('title')} />
 
       {loading ? (
         <div className="space-y-4">
@@ -86,11 +91,11 @@ export default function OrdersPage() {
       ) : orders.length === 0 ? (
         <EmptyState
           icon={Package}
-          title="No orders yet"
-          description="Start shopping to see your orders here."
+          title={t('emptyTitle')}
+          description={t('emptyDescription')}
           action={
             <Button asChild>
-              <Link href="/">Shop now</Link>
+              <Link href="/">{tc('shopNow')}</Link>
             </Button>
           }
         />
@@ -104,12 +109,12 @@ export default function OrdersPage() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-bold text-foreground">Order #{order.id}</span>
+                    <span className="font-bold text-foreground">{t('orderNumber', { id: order.id })}</span>
                     <OrderStatusBadge status={order.status} />
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {new Date(order.orderedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    {order.shipRecipientName && ` · To: ${order.shipRecipientName}`}
+                    {format.dateTime(new Date(order.orderedAt), { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {order.shipRecipientName && t('shipTo', { name: order.shipRecipientName })}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 text-right">
@@ -136,10 +141,10 @@ export default function OrdersPage() {
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-foreground">{item.product.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            ¥{item.price.toLocaleString()} × {item.quantity}
+                            ¥{format.number(item.price)} × {item.quantity}
                           </p>
                         </div>
-                        <p className="text-sm font-semibold text-foreground">¥{(item.price * item.quantity).toLocaleString()}</p>
+                        <p className="text-sm font-semibold text-foreground">¥{format.number(item.price * item.quantity)}</p>
                       </div>
                     ))}
                   </div>
@@ -150,23 +155,23 @@ export default function OrdersPage() {
                     return (
                       <div className="mb-4 space-y-1.5 border-t border-border pt-3 text-sm">
                         <div className="flex justify-between text-muted-foreground">
-                          <span>Subtotal</span><span>¥{itemsSubtotal.toLocaleString()}</span>
+                          <span>{ts('subtotal')}</span><span>¥{format.number(itemsSubtotal)}</span>
                         </div>
                         <div className="flex justify-between text-muted-foreground">
-                          <span>Shipping</span>
-                          <span>{shipping === 0 ? 'Free' : `¥${shipping.toLocaleString()}`}</span>
+                          <span>{ts('shipping')}</span>
+                          <span>{shipping === 0 ? ts('free') : `¥${format.number(shipping)}`}</span>
                         </div>
                         {order.discountAmount > 0 && (
                           <div className="flex justify-between text-muted-foreground">
-                            <span>Coupon{order.couponCode ? ` (${order.couponCode})` : ''}</span>
-                            <span>−¥{order.discountAmount.toLocaleString()}</span>
+                            <span>{order.couponCode ? ts('couponWithCode', { code: order.couponCode }) : ts('coupon')}</span>
+                            <span>−¥{format.number(order.discountAmount)}</span>
                           </div>
                         )}
                         <div className="flex justify-between text-muted-foreground">
-                          <span>消費税 (10%)</span><span>¥{order.taxAmount.toLocaleString()}</span>
+                          <span>{ts('tax')}</span><span>¥{format.number(order.taxAmount)}</span>
                         </div>
                         <div className="flex justify-between border-t border-border pt-1.5 font-semibold text-foreground">
-                          <span>Total</span><span>¥{order.totalAmount.toLocaleString()}</span>
+                          <span>{ts('total')}</span><span>¥{format.number(order.totalAmount)}</span>
                         </div>
                       </div>
                     )
@@ -175,7 +180,7 @@ export default function OrdersPage() {
                   {(order.status === 'PAYMENT_RECEIVED' || order.status === 'PROCESSING') && (
                     <Button variant="outline" size="sm" onClick={() => handleCancel(order.id)}>
                       <X className="h-4 w-4" strokeWidth={2} />
-                      Cancel order
+                      {t('cancelOrder')}
                     </Button>
                   )}
                 </div>

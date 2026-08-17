@@ -1,5 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
+import { useTranslations } from "next-intl"
 import type { LucideIcon } from "lucide-react"
 import { ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ interface ProductCardProps {
  * across the grid").
  */
 export function ProductCard({ product, onAddToCart, cornerAction }: ProductCardProps) {
+  const t = useTranslations("ProductCard")
   const outOfStock = product.stock === 0
 
   return (
@@ -90,11 +92,11 @@ export function ProductCard({ product, onAddToCart, cornerAction }: ProductCardP
           onClick={() => onAddToCart(product.id)}
         >
           {outOfStock ? (
-            "Out of stock"
+            t("outOfStock")
           ) : (
             <>
               <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-              Add to cart
+              {t("addToCart")}
             </>
           )}
         </Button>
