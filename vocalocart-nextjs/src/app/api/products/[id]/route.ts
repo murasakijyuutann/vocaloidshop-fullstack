@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { getCachedProduct, invalidateCatalogCache } from '@/lib/catalog-cache'
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -16,22 +17,10 @@ const updateSchema = z.object({
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(id) },
-      include: { category: true },
-    })
-    if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    const result = await getCachedProduct(parseInt(id))
+    if (!result) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
 
-    // Related products: same category, excluding this one. In-stock items
-    // surface first so a related product isn't just an immediate dead end.
-    const relatedProducts = await prisma.product.findMany({
-      where: { categoryId: product.categoryId, id: { not: product.id } },
-      include: { category: true },
-      orderBy: [{ stock: 'desc' }, { createdAt: 'desc' }],
-      take: 4,
-    })
-
-    return NextResponse.json({ product, relatedProducts })
+    return NextResponse.json(result)
   } catch {
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
   }
@@ -57,6 +46,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       data: parsed.data,
       include: { category: true },
     })
+    invalidateCatalogCache()
     return NextResponse.json(product)
   } catch {
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 })
@@ -73,6 +63,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     const { id } = await params
     await prisma.product.delete({ where: { id: parseInt(id) } })
+    invalidateCatalogCache()
     return NextResponse.json({ message: 'Product deleted' })
   } catch {
     return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 })

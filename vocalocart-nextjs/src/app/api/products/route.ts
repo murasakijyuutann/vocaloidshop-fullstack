@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { getCachedProductList, invalidateCatalogCache } from '@/lib/catalog-cache'
 
 const searchSchema = z.object({
   q: z.string().trim().optional(),
@@ -29,23 +30,7 @@ export async function GET(request: NextRequest) {
     }
     const { q, categoryId, sort, dir, page, size } = parsed.data
 
-    const where = {
-      ...(q ? { name: { contains: q, mode: 'insensitive' as const } } : {}),
-      ...(categoryId ? { categoryId } : {}),
-    }
-
-    const orderBy = { [sort]: dir }
-
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: { category: true },
-        orderBy,
-        skip: page * size,
-        take: size,
-      }),
-      prisma.product.count({ where }),
-    ])
+    const { products, total } = await getCachedProductList(q, categoryId, sort, dir, page, size)
 
     return NextResponse.json({
       products,
@@ -97,6 +82,7 @@ export async function POST(request: NextRequest) {
         category: true
       }
     })
+    invalidateCatalogCache()
 
     return NextResponse.json(product, { status: 201 })
   } catch (error) {

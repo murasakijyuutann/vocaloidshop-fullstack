@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/lib/auth'
+import { invalidateCatalogCache } from '@/lib/catalog-cache'
 
 const updateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -42,6 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       where: { id: parseInt(id) },
       data: parsed.data,
     })
+    invalidateCatalogCache()
     return NextResponse.json(category)
   } catch {
     return NextResponse.json({ error: 'Failed to update category' }, { status: 500 })
@@ -71,6 +73,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     }
 
     await prisma.category.delete({ where: { id: parseInt(id) } })
+    invalidateCatalogCache()
     return NextResponse.json({ message: 'Category deleted' })
   } catch {
     return NextResponse.json({ error: 'Failed to delete category' }, { status: 500 })
