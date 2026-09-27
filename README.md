@@ -6,6 +6,8 @@ English | [日本語](README.ja.md)
 
 Built with Next.js 16 (App Router), Prisma, PostgreSQL, NextAuth.js v5, and Stripe — a single application handling both the storefront and the backend API, migrated from an earlier Spring Boot + Vite/React implementation.
 
+**Live demo:** [vocalocart-dev.vercel.app](https://vocalocart-dev.vercel.app) — Stripe runs in test mode, so use card `4242 4242 4242 4242` with any future expiry and any CVC. No real charges are made.
+
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)]()
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748)]()
@@ -28,6 +30,7 @@ Built with Next.js 16 (App Router), Prisma, PostgreSQL, NextAuth.js v5, and Stri
 - Per-product metadata and `schema.org` `Product` JSON-LD for search/social previews
 - Shopping cart and wishlist, both DB-backed for logged-in users
 - Free shipping threshold (¥5,000+) and 消費税 (10% consumption tax) calculated on every total
+- English / 日本語 UI toggle (next-intl, locale stored in a cookie; no URL prefix)
 
 ### Orders & checkout
 - Stripe-powered checkout (Payment Element), including konbini (Japanese convenience-store payment)
@@ -37,8 +40,9 @@ Built with Next.js 16 (App Router), Prisma, PostgreSQL, NextAuth.js v5, and Stri
 - Order history with 7-stage status tracking and a full price breakdown (subtotal, shipping, coupon, tax, total)
 
 ### Admin panel
-- Product and category CRUD with image upload to Vercel Blob
+- Product CRUD with image upload to Vercel Blob
 - View and update order status across all users
+- Categories are managed through the `/api/categories` API (admin-only writes) or SQL — there is no category screen in the admin UI yet
 
 ### Engineering
 - Rate limiting on auth, checkout, and search routes
@@ -63,9 +67,11 @@ Built with Next.js 16 (App Router), Prisma, PostgreSQL, NextAuth.js v5, and Stri
 | Email | Resend |
 | File storage | Vercel Blob |
 | UI | Tailwind CSS v4, shadcn/ui + Radix primitives, lucide-react icons |
+| i18n | next-intl (English / Japanese) |
 | Validation | Zod |
 | Testing | Vitest |
 | CI | GitHub Actions |
+| Hosting | Vercel (functions in `iad1`), Neon Postgres (`aws-us-east-1`) |
 
 ---
 
@@ -73,6 +79,9 @@ Built with Next.js 16 (App Router), Prisma, PostgreSQL, NextAuth.js v5, and Stri
 
 ```
 vocalocart-nextjs/
+├── messages/
+│   ├── en.json                # English UI strings
+│   └── ja.json                # Japanese UI strings
 ├── prisma/
 │   ├── schema.prisma          # Database schema
 │   ├── migrations/            # Prisma migration history
@@ -104,8 +113,9 @@ vocalocart-nextjs/
 │   │   ├── ui/                   # shadcn/ui primitives (button, input, select, ...)
 │   │   ├── ProductCard.tsx, PriceTag.tsx, QuantityStepper.tsx
 │   │   ├── PageHeader.tsx, EmptyState.tsx, OrderStatusBadge.tsx
-│   │   ├── Navbar.tsx, Footer.tsx
+│   │   ├── Navbar.tsx, Footer.tsx, LocaleSwitcher.tsx
 │   │   └── Providers.tsx         # SessionProvider + ThemeProvider (dark theme only)
+│   ├── i18n/                     # Locale config + next-intl request config (cookie-based)
 │   ├── hooks/
 │   │   └── use-cart.ts           # Zustand cart store
 │   ├── lib/
@@ -126,7 +136,7 @@ vocalocart-nextjs/
 
 ### Prerequisites
 
-- **Node.js** 18+
+- **Node.js** 20.9+ (Next.js 16 minimum; 22 recommended, matches CI)
 - A **PostgreSQL** database ([Neon](https://neon.tech) or [Supabase](https://supabase.com) both work)
 - A **Stripe** account (for payments)
 
@@ -159,6 +169,8 @@ npx prisma migrate dev
 ```bash
 npx prisma db seed
 ```
+
+This creates sample categories and products plus two accounts with known passwords (`admin@vocalocart.com` / `admin123` and `test@vocalocart.com` / `user123`). **Local development only — never run the seed against a production database.**
 
 ### 5. Run the development server
 
@@ -223,13 +235,35 @@ To grant admin access, update the user record directly in your database:
 UPDATE "user" SET is_admin = true WHERE email = 'your@email.com';
 ```
 
-Then log out and back in. The admin links (Orders, Products) will appear in the navbar.
+Then log out and back in (the admin flag is stored in the session token, so it only updates on a fresh login). The admin links (Orders, Products) will appear in the navbar.
+
+In a fresh production database there are no categories until you create some, so the admin product form's category dropdown will be empty. Add them with SQL, for example:
+
+```sql
+INSERT INTO category (name, description) VALUES ('Figures', 'Vocaloid character figures and statues');
+```
 
 ---
 
 ## Deploying
 
-The app is set up to deploy on [Vercel](https://vercel.com). See [`docs/vocalocart-deployment-checklist.md`](docs/vocalocart-deployment-checklist.md) for the full readiness checklist (env vars, Stripe webhook, Vercel Blob, migration strategy) — it also documents a migration-history drift issue that was found and fixed, worth reading before a first deploy.
+The production deployment runs on [Vercel](https://vercel.com) with a Neon Postgres database:
+
+- Vercel project Root Directory: **`vocalocart-nextjs`** (the app is not at the repo root)
+- Pushes to `main` deploy to production automatically
+- Environment variables are listed in [`.env.example`](vocalocart-nextjs/.env.example). `STRIPE_SECRET_KEY` and `RESEND_API_KEY` must be set before the first build, because those clients are created when their modules load. `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is baked in at build time, so changing it requires a redeploy.
+- **Migrations are run manually**, not by the build. Run them before pushing code that depends on a schema change:
+
+  ```bash
+  cd vocalocart-nextjs
+  DATABASE_URL="<production connection string>" npx prisma migrate deploy
+  ```
+
+- The Stripe webhook endpoint is `https://<domain>/api/payments/webhook`, subscribed to `payment_intent.succeeded`. Use that endpoint's own signing secret, not the `stripe listen` one.
+
+See [`docs/vocalocart-deployment-checklist.md`](docs/vocalocart-deployment-checklist.md) for the step-by-step checklist and open post-deploy tests, and [`docs/vocalocart-deployment-log-2026-09-27.md`](docs/vocalocart-deployment-log-2026-09-27.md) for a record of how the current production deployment was set up.
+
+To run a production build locally:
 
 ```bash
 npm run build
@@ -243,7 +277,12 @@ npm start
 - [`docs/vocalocart-design-brief.md`](docs/vocalocart-design-brief.md) — the visual redesign brief (dark theme, shadcn/ui, no-emoji UI)
 - [`docs/vocalocart-task-audit.md`](docs/vocalocart-task-audit.md) — audit of the original task spec against the codebase
 - [`docs/vocalocart-execution-log.md`](docs/vocalocart-execution-log.md) — what was actually implemented, in order, with verification notes
-- [`docs/vocalocart-deployment-checklist.md`](docs/vocalocart-deployment-checklist.md) — Vercel deploy readiness
+- [`docs/vocalocart-i18n-plan.md`](docs/vocalocart-i18n-plan.md) — plan and decisions for the English / Japanese UI
+- [`docs/vocalocart-vercel-deployment-guide.md`](docs/vocalocart-vercel-deployment-guide.md) — Vercel deployment walkthrough
+- [`docs/vocalocart-deployment-checklist.md`](docs/vocalocart-deployment-checklist.md) — deploy checklist, post-deploy tests, and remaining items before real customers
+- [`docs/vocalocart-deployment-log-2026-09-27.md`](docs/vocalocart-deployment-log-2026-09-27.md) — record of the first production deployment
+- [`SCALE_AUDIT.md`](SCALE_AUDIT.md) — load-testing results and the scaling fixes they led to
+- [`vocalocart-nextjs/docs/vocalocart-edge-case-testing-guide.md`](vocalocart-nextjs/docs/vocalocart-edge-case-testing-guide.md) — manual edge-case and security test procedures
 
 ---
 
