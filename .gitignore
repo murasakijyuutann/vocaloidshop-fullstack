@@ -43,3 +43,7 @@ Thumbs.db
 
 ### 🚫 Optional local configs
 *.env.example # optional if you want to keep separate example files
+
+.vercel
+.env*
+!.env.example
