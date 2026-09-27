@@ -34,7 +34,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const res = await signIn('credentials', { email, password, redirect: false })
-      if (res?.ok) {
+      // Auth.js v5 returns ok: true (HTTP 200) even for bad credentials; failure is only reported via `error`.
+      if (res && !res.error) {
         toast.success(t('welcomeBackToast'))
         router.push('/')
         router.refresh()
