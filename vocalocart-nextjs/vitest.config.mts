@@ -9,6 +9,9 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    // NextAuth imports Next's extensionless entry points, resolved by Next's
+    // bundler in production. Let Vitest resolve them the same way in tests.
+    server: { deps: { inline: ['next-auth'] } },
   },
 })
